@@ -4,7 +4,7 @@ from helper_functions import generate_end_dates, stock_market
 import pandas as pd
 from plot import *
 from stock_screener import EM_rating, stoploss_target
-from technicals import * 
+from technicals import *
 
 # Start of the program
 start = dt.datetime.now()

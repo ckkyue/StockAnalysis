@@ -497,7 +497,7 @@ def main():
     end_dates = [current_date]
 
     # Variables
-    NASDAQ_all = False
+    NASDAQ_all = True
     period = 252
     RS = 90
     factors = [1, 1, 1]

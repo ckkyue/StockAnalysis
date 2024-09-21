@@ -184,7 +184,8 @@ def process_stock(stock, index_name, end_date, current_date, stock_data, stock_i
 
                     # Calculate the volatility of the stock over past 1 month
                     data = get_volatility(df)
-                    volatility = data["Volatility"].iloc[-1]
+                    volatility_20 = data["Volatility 20"].iloc[-1]
+                    volatility_60 = data["Volatility 60"].iloc[-1]
 
                     # MVP/VCP condition
                     data = MVP_VCP(df)
@@ -212,7 +213,8 @@ def process_stock(stock, index_name, end_date, current_date, stock_data, stock_i
                         "RS Rating": RS_rating,
                         "Volume SMA 5 Rank": volume_sma5_rank,
                         "Close": round(current_close, 2),
-                        "Volatility (%)": round(volatility * 100, 2),
+                        "Volatility 20 (%)": round(volatility_20 * 100, 2),
+                        "Volatility 60 (%)": round(volatility_60 * 100, 2),
                         "MA 5": SMA_5 if SMA_5 is not None else EMA_5,
                         "MA 20": SMA_20 if SMA_20 is not None else EMA_20,
                         "MA 50": SMA_50 if SMA_50 is not None else EMA_50,
@@ -425,7 +427,7 @@ def select_stocks(end_dates, current_date, index_name, index_dict,
         # Export the results to an Excel file inside the "end_date_fmt" folder
         filename = os.path.join(folder_path, f"{infix}stock_{end_date_fmt}period{period}RS{RS}.xlsx")
         writer = EW(filename)
-        export_list.to_excel(writer, "Sheet1")
+        export_list.to_excel(writer, sheet_name="Sheet1", index=False)
         writer._save()
 
 # Create the stock dictionary
@@ -495,9 +497,10 @@ def main():
     end_dates = generate_end_dates(5, current_date)
     end_dates.append(current_date)
     end_dates = [current_date]
+    
 
     # Variables
-    NASDAQ_all = False
+    NASDAQ_all = True
     period = 252
     RS = 90
     factors = [1, 1, 1]

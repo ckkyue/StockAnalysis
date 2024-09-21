@@ -13,14 +13,15 @@ def EMA(data, period, column="Close"):
     return data[column].ewm(span=period, adjust=False).mean()
 
 # Get the volatility
-def get_volatility(data, period=20, column="Close"):
+def get_volatility(data, periods=[20, 60], column="Close"):
     data_copy = data.copy()
 
     # Calculate the percent change of the stock
     data_copy["Percent Change"] = data_copy[column].pct_change()
 
     # Calculate the volatility
-    data["Volatility"] = data_copy["Percent Change"].rolling(window=period).std()
+    for period in periods:
+        data[f"Volatility {period}"] = data_copy["Percent Change"].rolling(window=period).std()
 
     return data
 

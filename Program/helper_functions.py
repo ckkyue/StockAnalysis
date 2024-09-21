@@ -8,7 +8,6 @@ import os
 from scipy.stats import linregress
 from yahoo_fin import stock_info as si
 import yfinance as yf
-yf.pdr_override()
 
 # Get the price data of a stock
 def get_df(stock, end_date, redownload=False):
@@ -46,7 +45,7 @@ def get_df(stock, end_date, redownload=False):
     # Save the price data to a .csv file if the most updated data do not exist
     filename = os.path.join(folder_path, f"{stock}_{end_date}.csv")
     if not os.path.isfile(filename) or redownload:
-        df = pdr.get_data_yahoo(stock, start=csv_date, end=end_date)
+        df = yf.download(stock, start=csv_date, end=end_date)
         if not df.empty:
             df.to_csv(filename)
             df = pd.read_csv(filename)

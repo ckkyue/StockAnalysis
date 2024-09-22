@@ -13,14 +13,14 @@ start = dt.datetime.now()
 current_date = start.strftime("%Y-%m-%d")
 
 # Choose the stocks
-stocks = ["NRG", "CRS"]
+stocks = ["ACIW", "NRG", "CRS"]
 
 # Iterate over stocks
 for stock in stocks:
     df = get_df(stock, current_date)
     plot_close(stock, df, save=True)
     plot_MFI_RSI(stock, df, save=True)
-    plot_stocks(["^GSPC", "^IXIC", stock], current_date, save=True)
+    plot_stocks(["^GSPC", "^GSPC", stock], current_date, save=True)
 
 # Get the stop loss and target price of a stock
 stock = "ACIW"

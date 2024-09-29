@@ -124,21 +124,36 @@ def process_stock(stock, index_name, end_date, current_date, stock_data, stock_i
 
         # Check the Minervini conditions
         # Technicals
-        try:
-            cond_1 = current_close > SMA_50 > SMA_200
-        except Exception:
-            cond_1 = current_close > EMA_50 > EMA_200
-        try:
-            cond_2 = SMA_50_slope > 0
-        except Exception:
-            cond_2 = EMA_50_slope > 0
-        try:
-            cond_3 = SMA_200_slope > 0
-        except Exception:
-            cond_3 = EMA_200_slope > 0
-        cond_4 = current_close >= (1.25 * Low)
-        cond_5 = current_close >= (0.75 * High)
-        conds_tech = cond_1 and cond_2 and cond_3 and cond_4 and cond_5
+        if index_name == "^HSI":
+            try:
+                cond_t1 = current_close > SMA_20 > SMA_50
+            except Exception:
+                cond_t1 = current_close > EMA_20 > EMA_50
+            try:
+                cond_t2 = current_close > SMA_200
+            except Exception:
+                cond_t2 = current_close > EMA_200
+            try:
+                cond_t3 = SMA_20_slope > 0
+            except Exception:
+                cond_t3 = EMA_20_slope > 0
+            conds_tech = cond_t1 and cond_t2 and cond_t3
+        else:
+            try:
+                cond_t1 = current_close > SMA_50 > SMA_200
+            except Exception:
+                cond_t1 = current_close > EMA_50 > EMA_200
+            try:
+                cond_t2 = SMA_50_slope > 0
+            except Exception:
+                cond_t2 = EMA_50_slope > 0
+            try:
+                cond_t3 = SMA_200_slope > 0
+            except Exception:
+                cond_t3 = EMA_200_slope > 0
+            cond_t4 = current_close >= (1.25 * Low)
+            cond_t5 = current_close >= (0.75 * High)
+            conds_tech = cond_t1 and cond_t2 and cond_t3 and cond_t4 and cond_t5
 
         # Preprocess stock information
         if conds_tech:
@@ -150,16 +165,18 @@ def process_stock(stock, index_name, end_date, current_date, stock_data, stock_i
                 
                 # Estimate the EPS growth of next year
                 EPS_nextY_growth = round((fEPS - tEPS) / np.abs(tEPS) * 100, 2) if tEPS != "N/A" else "N/A"
+
             elif backtest:
                 market_cap, EPS_past5Y_growth, EPS_thisY_growth, EPS_QoQ_growth, ROE = get_fundamentals(stock, index_name, end_date, current_date)
+
             sector = stock_info.get("sector", "N/A")
             industry = stock_info.get("industry", "N/A")
 
             # Fundamentals
-            cond_6 = market_cap != "N/A" and market_cap > 1
+            cond_f1 = market_cap != "N/A" and market_cap > 1
 
             # Check if the conditions are met
-            conds = conds_tech and cond_6
+            conds = conds_tech and cond_f1
             if conds:
                 if not backtest:
                     if index_name == "^HSI":
@@ -167,20 +184,34 @@ def process_stock(stock, index_name, end_date, current_date, stock_data, stock_i
                     else:
                         _, EPS_past5Y_growth, EPS_thisY_growth, EPS_QoQ_growth, ROE = get_fundamentals(stock, index_name, end_date, current_date)
 
-                try:
-                    cond_7 = EPS_thisY_growth >= 0
-                except Exception:
-                    cond_7 = False
-                try:
-                    cond_8 = EPS_QoQ_growth >= 10
-                except Exception:
-                    cond_8 = False
-                try:
-                    cond_9 = ROE >= 0
-                except Exception:
-                    cond_9 = False
+                if index_name == "^HSI":
+                    try:
+                        cond_f2 = EPS_nextY_growth >= 0
+                    except Exception:
+                        cond_f2 = False
+                    try:
+                        cond_f3 = earnings_thisQ_growth >= 0
+                    except Exception:
+                        cond_f3 = False
+                    try:
+                        cond_f4 = ROE >= 0
+                    except Exception:
+                        cond_f4 = False
+                else:
+                    try:
+                        cond_f2 = EPS_thisY_growth >= 0
+                    except Exception:
+                        cond_f2 = False
+                    try:
+                        cond_f3 = EPS_QoQ_growth >= 10
+                    except Exception:
+                        cond_f3 = False
+                    try:
+                        cond_f4 = ROE >= 0
+                    except Exception:
+                        cond_f4 = False
                 
-                if cond_7 and cond_8 and cond_9:
+                if cond_f2 and cond_f3 and cond_f4:
                     # Get the quarterly growths of the stock
                     EPS_thisQ_growth, EPS_last1Q_growth, EPS_last2Q_growth = get_lastQ_growths(stock, index_name, end_date, current_date)
 
@@ -236,8 +267,8 @@ def process_stock(stock, index_name, end_date, current_date, stock_data, stock_i
                         "52 Week High": High,
                         f"Market Cap (B, {currency})": market_cap,
                         "EPS past 5Y (%)": EPS_past5Y_growth if index_name != "^HSI" else "N/A",
-                        "EPS this Y (%)": EPS_thisY_growth if index_name != "^HSI" else EPS_nextY_growth,
-                        "EPS Q/Q (%)": EPS_QoQ_growth,
+                        "EPS this Y (%)": EPS_thisY_growth if index_name != "^HSI" else "N/A",
+                        "EPS Q/Q (%)": EPS_QoQ_growth if index_name != "^HSI" else "N/A",
                         "ROE (%)": ROE,
                         "EPS this Q (%)": EPS_thisQ_growth if index_name != "^HSI" else "N/A",
                         "EPS last 1Q (%)": EPS_last1Q_growth if index_name != "^HSI" else "N/A",
@@ -302,7 +333,13 @@ def EM_rating(data, factors, target_columns=["MVP Rating", "EPS this Y (%)", "EP
 
 # Select the stocks
 def select_stocks(end_dates, current_date, index_name, index_dict, 
-                  period, RS, NASDAQ_all, factors, backtest):
+                  period_hk, period_us, RS, NASDAQ_all, factors, backtest):
+    # Select period based on HK/US
+    if index_name == "^HSI":
+        period = period_hk
+    else:
+        period = period_us
+
     # Define the path for the "Result" folder
     result_folder = "Result"
 
@@ -372,6 +409,7 @@ def select_stocks(end_dates, current_date, index_name, index_dict,
                 df["Volume SMA 5"] = SMA(df, 5, column="Volume")
                 df["Volume SMA 20"] = SMA(df, 20, column="Volume")
                 volume_smas[ticker] = {"Volume SMA 5": df["Volume SMA 5"].iloc[-1], "Volume SMA 20": df["Volume SMA 20"].iloc[-1]}
+
             except Exception as e:
                 print(f"Error gathering data for {ticker}: {e}\n")
                 
@@ -400,11 +438,15 @@ def select_stocks(end_dates, current_date, index_name, index_dict,
         if not backtest:
             rs_volume_df.to_csv(filename, index=False)
 
-        # Filter the RS dataframe
-        rs_df = rs_df[rs_df["RS"] >= RS]
+        # Filter the stocks
+        if index_name == "^HSI":
+            volume_df = volume_df[(volume_df["Volume SMA 5 Rank"] <= 200) | (volume_df["Volume SMA 20 Rank"] <= 200)]
+            stocks = volume_df["Ticker"]
+        else:
+            rs_df = rs_df[rs_df["RS"] >= RS]
+            stocks = rs_df["Ticker"]
 
         # Fetch the stock data and stock information in parallel
-        stocks = rs_df["Ticker"]
         with concurrent.futures.ThreadPoolExecutor() as executor:
             stock_data = {stock: data for stock, data in zip(stocks, executor.map(lambda stock: get_stock_data(stock, end_date, current_date), stocks))}
             stock_info_data = {stock: info for stock, info in zip(stocks, executor.map(get_stock_info, stocks))}
@@ -502,18 +544,19 @@ def main():
 
     # Variables
     NASDAQ_all = False
-    period = 252
+    period_hk = 60 # Period for HK stocks
+    period_us = 252 # Period for US stocks
     RS = 90
     factors = [1, 1, 1]
     backtest = False
 
     # Index
-    index_name = "^GSPC"
+    index_name = "^HSI"
     index_dict = {"^HSI": "HKEX", "^GSPC": "S&P 500", "^IXIC": "NASDAQ Composite"}
 
     # Stock selection
     select_stocks(end_dates, current_date, index_name, index_dict, 
-                  period, RS, NASDAQ_all, factors, backtest)
+                  period_hk, period_us, RS, NASDAQ_all, factors, backtest)
 
     # Print the end time and total runtime
     end = dt.datetime.now()

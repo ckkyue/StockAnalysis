@@ -408,6 +408,9 @@ def plot_stocks(stocks, current_date, column="Close", show=120, save=False):
     # Set the title
     plt.title("Closing price history for stocks")
 
+    # Adjust the spacing
+    plt.tight_layout()
+
     # Save the plot
     if save:
         plt.savefig("Result/Figure/closestocks.png", dpi=300)
@@ -683,6 +686,9 @@ def plot_autocorr(stock, end_date, years):
         plt.title(f"Autocorrelation function for {stock} in the past {years} year")
     else:
         plt.title(f"Autocorrelation function for {stock} in the past {years} years")
+
+    # Adjust the spacing
+    plt.tight_layout()
 
     # Set the legend
     plt.legend()

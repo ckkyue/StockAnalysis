@@ -528,7 +528,6 @@ def main():
 
     # Initial setup
     current_date = start.strftime("%Y-%m-%d")
-    current_date = "2024-10-01"
 
     # Define the paths for the folders
     folders = ["Price data"]
@@ -544,7 +543,7 @@ def main():
     end_dates = [current_date]
 
     # Variables
-    NASDAQ_all = True
+    NASDAQ_all = False
     period_hk = 60 # Period for HK stocks
     period_us = 252 # Period for US stocks
     RS = 90

@@ -155,9 +155,9 @@ def stock_market(end_date, current_date, index_name, NASDAQ_all):
 
 # Get the infix
 def get_infix(index_name, index_dict, NASDAQ_all):
-    if NASDAQ_all:
+    if NASDAQ_all and index_name == "^GSPC":
         infix = "NASDAQ"
-    elif not NASDAQ_all:
+    else:
         infix = index_dict[index_name].replace(" ", "")
         
     return infix

@@ -71,6 +71,10 @@ for period in periods:
     # Draw a vertical line at the mean
     plt.axvline(mean, color="red", linestyle="dashed", linewidth=1.5, label=f"Mean: {mean:.2f}%")
 
+    # Set the y-axis ticks to integers
+    y_ticks = np.arange(0, plt.ylim()[1] + 1, 1)
+    plt.yticks(y_ticks)
+
     # Set the labels
     plt.xlabel("Return (%)")
     plt.ylabel("Count")

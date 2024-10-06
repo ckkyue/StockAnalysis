@@ -99,7 +99,7 @@ jd_df = get_df("9618.HK", current_date)
 hsi_df = get_df("^HSI", current_date)
 
 # Calculate percentage change for both
-show = 120
+show = 3 * 252
 hsi_df["HSI Percent Change"] = hsi_df["Close"].pct_change()
 jd_df["JD Percent Change"] = jd_df["Close"].pct_change()
 
@@ -165,7 +165,7 @@ plt.title("Closing price history for stocks")
 plt.tight_layout()
 
 # Save the plot
-plt.savefig(f"Result/Figure/HSIJD{show}.png", dpi=300)
+plt.savefig(f"Result/Figure/{min_factor:.2f}xHSIJDperiod{show}.png", dpi=300)
 
 # Show the plot
 plt.show()

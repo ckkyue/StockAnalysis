@@ -76,8 +76,8 @@ def main():
     # Plot the relative rotation graph
     plot_rrg(sectors, sector_dict, index_df, save=True)
 
-    # Plot the sectors of the selected stocks
-    plot_sector_selected(current_date, "^GSPC", index_dict, NASDAQ_all=NASDAQ_all, save=True)
+    # # Plot the sectors of the selected stocks
+    # plot_sector_selected(current_date, "^GSPC", index_dict, NASDAQ_all=NASDAQ_all, save=True)
 
     # Get the list of tickers of stock market
     index_name = "^GSPC"

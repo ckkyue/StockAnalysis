@@ -531,7 +531,6 @@ def main():
 
     # Initial setup
     current_date = start.strftime("%Y-%m-%d")
-    current_date = "2024-10-09"
 
     # Define the paths for the folders
     folders = ["Price data"]

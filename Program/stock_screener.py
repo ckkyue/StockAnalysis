@@ -554,7 +554,7 @@ def main():
     backtest = False
 
     # Index
-    index_name = "^GSPC"
+    index_name = "^HSI"
     index_dict = {"^HSI": "HKEX", "^GSPC": "S&P 500", "^IXIC": "NASDAQ Composite"}
 
     # Stock selection

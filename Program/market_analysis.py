@@ -15,7 +15,7 @@ def screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
     # Define the fill colour for highlighting
     yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
     red_font = Font(color="FF0000")
-    green_font = Font(color="00FF00")
+    green_font = Font(color="008000")
 
     # Find the index of the "Stock", "Sector", "Volatility 20 Z-Score", "Volatility 60 Z-Score", and "VCP" columns
     stock_col_index = None
@@ -79,7 +79,7 @@ def main():
     current_date = start.strftime("%Y-%m-%d")
 
    # Variables
-    NASDAQ_all = False
+    NASDAQ_all = True
     period_hk = 60 # Period for HK stocks
     period_us = 252 # Period for US stocks
     RS = 90

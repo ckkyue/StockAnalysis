@@ -460,8 +460,22 @@ def select_stocks(end_dates, current_date, index_name, index_dict,
         # Process each stock and create an export list
         export_data = [process_stock(stock, index_name, end_date, current_date, stock_data, stock_info_data, rs_volume_df, backtest=backtest) for stock in tqdm(stocks)]
         export_data = [row for row in export_data if row is not None]
-        export_list = pd.DataFrame(export_data)
-        export_list = EM_rating(index_name, export_list, factors)
+        df = pd.DataFrame(export_data)
+        df = EM_rating(index_name, df, factors)
+
+        # Calculate the means and standard deviations
+        volatility_20_mean = df["Volatility 20 (%)"].mean()
+        volatility_60_mean = df["Volatility 60 (%)"].mean()
+        volatility_20_sd = df['Volatility 20 (%)'].std()
+        volatility_60_sd = df['Volatility 60 (%)'].std()
+
+        # Calculate the z-scores
+        volatility_20_zscore = (df["Volatility 20 (%)"] - volatility_20_mean) / volatility_20_sd
+        volatility_60_zscore = (df["Volatility 60 (%)"] - volatility_60_mean) / volatility_60_sd
+
+        # Insert the z-scores
+        df.insert(df.columns.get_loc("Volatility 20 (%)") + 1, "Volatility 20 Z-Score (%)", volatility_20_zscore)
+        df.insert(df.columns.get_loc("Volatility 60 (%)") + 1, "Volatility 60 Z-Score (%)", volatility_60_zscore)
 
         # Format the end date
         end_date_fmt = dt.datetime.strptime(end_date, "%Y-%m-%d").strftime("%d-%m-%y")
@@ -474,7 +488,7 @@ def select_stocks(end_dates, current_date, index_name, index_dict,
         # Export the results to an Excel file inside the "end_date_fmt" folder
         filename = os.path.join(folder_path, f"{infix}stock_{end_date_fmt}period{period}RS{RS}.xlsx")
         writer = EW(filename)
-        export_list.to_excel(writer, sheet_name="Sheet1", index=False)
+        df.to_excel(writer, sheet_name="Sheet1", index=False)
         writer._save()
 
 # Create the stock dictionary
@@ -554,7 +568,7 @@ def main():
     backtest = False
 
     # Index
-    index_name = "^GSPC"
+    index_name = "^HSI"
     index_dict = {"^HSI": "HKEX", "^GSPC": "S&P 500", "^IXIC": "NASDAQ Composite"}
 
     # Stock selection

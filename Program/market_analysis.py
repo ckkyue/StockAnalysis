@@ -15,6 +15,7 @@ def screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
     # Define the fill colour for highlighting
     yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
     red_font = Font(color="FF0000")
+    green_font = Font(color="00FF00")
 
     # Find the index of the "Stock", "Sector", "Volatility 20 Z-Score", "Volatility 60 Z-Score", and "VCP" columns
     stock_col_index = None
@@ -50,15 +51,19 @@ def screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
                 sector_cell.fill = yellow_fill
             
             # Change text colour to red if Volatility 20 Z-Score is greater than 2
-            if volatility20_cell.value is not None and volatility20_cell.value > 2:
+            if volatility20_cell.value > 2:
                 volatility20_cell.font = red_font
+            elif volatility20_cell.value < - 2:
+                volatility20_cell.font = green_font
 
             # Change text colour to red if Volatility 60 Z-Score is greater than 2
-            if volatility60_cell.value is not None and volatility60_cell.value > 2:
+            if volatility60_cell.value > 2:
                 volatility60_cell.font = red_font
+            elif volatility60_cell.value < - 2:
+                volatility60_cell.font = green_font
 
             # Change text colour to red if VCP is True
-            if vcp_cell.value is not None and vcp_cell.value == True:
+            if vcp_cell.value == True:
                 vcp_cell.fill = yellow_fill
 
     # Save the changes to the Excel file
@@ -74,7 +79,7 @@ def main():
     current_date = start.strftime("%Y-%m-%d")
 
    # Variables
-    NASDAQ_all = False
+    NASDAQ_all = True
     period_hk = 60 # Period for HK stocks
     period_us = 252 # Period for US stocks
     RS = 90
@@ -164,41 +169,45 @@ def main():
     # Screen the stocks from Excel file
     screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
 
-    # Get the list of tickers of stock market
-    index_df = get_df(index_name, current_date)
-    tickers = stock_market(current_date, current_date, index_name, False)
+    plot_marketbreadth = False
+    if plot_marketbreadth:
+        # Get the list of tickers of stock market
+        index_df = get_df(index_name, current_date)
+        tickers = stock_market(current_date, current_date, index_name, False)
 
-    # Calculate the market breadth indicators
-    index_df = market_breadth(current_date, index_df, tickers)
+        # Calculate the market breadth indicators
+        index_df = market_breadth(current_date, index_df, tickers)
 
-    # Save the data of the index to a .csv file
-    index_filename = f"Price data/{index_name}_{current_date}.csv"
-    index_df.to_csv(index_filename)
+        # Save the data of the index to a .csv file
+        index_filename = f"Price data/{index_name}_{current_date}.csv"
+        index_df.to_csv(index_filename)
 
-    # Visualize the closing price history and other technical indicators
-    plot_market_breadth(index_name, index_df, tickers, save=True)
-    plot_close(index_name, index_df, MVP_VCP=False)
-    plot_MFI_RSI(index_name, index_df, save=True)
- 
-    # Get the price data of CBOE Volatility Index (VIX)
-    vix_df = get_df("^VIX", current_date)
+        # Visualize the closing price history and other technical indicators
+        plot_market_breadth(index_name, index_df, tickers, save=True)
+        plot_close(index_name, index_df, MVP_VCP=False)
+        plot_MFI_RSI(index_name, index_df, save=True)
+    
+    plot_vix = True
+    if plot_vix:
+        # Get the price data of CBOE Volatility Index (VIX)
+        vix_df = get_df("^VIX", current_date)
 
-    # Get the current closing price of VIX
-    vix_current_high = round(vix_df["High"].iloc[-1], 2)
+        # Get the current closing price of VIX
+        vix_current_high = round(vix_df["High"].iloc[-1], 2)
 
-    # Define the exit indicator based on VIX value
-    if vix_current_high < 26:
-        vix_colour = "Green"
-    elif 26 < vix_current_high < 30:
-        vix_colour = "Yellow"
-    elif vix_current_high > 30:
-        vix_colour = "Red"
+        # Define the exit indicator based on VIX value
+        if vix_current_high < 26:
+            vix_colour = "Green"
+        elif 26 < vix_current_high < 30:
+            vix_colour = "Yellow"
+        elif vix_current_high > 30:
+            vix_colour = "Red"
 
-    # Plot the closing price history of VIX
-    plot_close("^VIX", vix_df, save=True)
+        # Plot the closing price history of VIX
+        plot_close("^VIX", vix_df, save=True)
 
-    # Print the exit indicator
-    print(f"Current VIX: {vix_current_high} ({vix_colour})")
+        # Print the exit indicator
+        print(f"Current VIX: {vix_current_high} ({vix_colour})")
 
     # Print the end time and total runtime
     end = dt.datetime.now()

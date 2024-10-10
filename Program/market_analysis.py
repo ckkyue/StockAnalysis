@@ -53,13 +53,13 @@ def screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
             # Change text colour to red if Volatility 20 Z-Score is greater than 2
             if volatility20_cell.value > 2:
                 volatility20_cell.font = red_font
-            elif volatility20_cell.value < - 2:
+            elif volatility20_cell.value < - 1:
                 volatility20_cell.font = green_font
 
             # Change text colour to red if Volatility 60 Z-Score is greater than 2
             if volatility60_cell.value > 2:
                 volatility60_cell.font = red_font
-            elif volatility60_cell.value < - 2:
+            elif volatility60_cell.value < - 1:
                 volatility60_cell.font = green_font
 
             # Change text colour to red if VCP is True
@@ -79,7 +79,7 @@ def main():
     current_date = start.strftime("%Y-%m-%d")
 
    # Variables
-    NASDAQ_all = True
+    NASDAQ_all = False
     period_hk = 60 # Period for HK stocks
     period_us = 252 # Period for US stocks
     RS = 90

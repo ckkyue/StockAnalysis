@@ -14,41 +14,41 @@ def screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
 
     # Define the fill colour for highlighting
     yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+    orange_fill = PatternFill(start_color="FFA500", end_color="FFA500", fill_type="solid")
     red_font = Font(color="FF0000")
     green_font = Font(color="008000")
 
     # Find the index of the "Stock", "Sector", "Volatility 20 Z-Score", "Volatility 60 Z-Score", and "VCP" columns
     stock_col_index = None
-    sector_col_index = None
     volatility20_col_index = None
     volatility60_col_index = None
+    mvp_col_index = None
     vcp_col_index = None
-
+    sector_col_index = None
+    
     for cell in sheet[1]: # Assuming the first row contains headers
         if cell.value == "Stock":
             stock_col_index = cell.column
-        elif cell.value == "Sector":
-            sector_col_index = cell.column
         elif cell.value == "Volatility 20 Z-Score":
             volatility20_col_index = cell.column
         elif cell.value == "Volatility 60 Z-Score":
             volatility60_col_index = cell.column
+        elif cell.value == "MVP":
+            mvp_col_index = cell.column
         elif cell.value == "VCP":
             vcp_col_index = cell.column
+        elif cell.value == "Sector":
+            sector_col_index = cell.column
 
     # Highlight the cells of each row
     if sector_col_index is not None:
         for row in sheet.iter_rows(min_row=2): # Start from the second row
             stock_cell = row[stock_col_index - 1] # Adjust for zero-based index
-            sector_cell = row[sector_col_index - 1]
             volatility20_cell = row[volatility20_col_index - 1]
             volatility60_cell = row[volatility60_col_index - 1]
+            sector_cell = row[sector_col_index - 1]
+            mvp_cell = row[mvp_col_index - 1]
             vcp_cell = row[vcp_col_index - 1]
-            
-            # Highlight the stock if its sector matches
-            if sector_cell.value in sectors_excel_leading + sectors_excel_improving:
-                stock_cell.fill = yellow_fill
-                sector_cell.fill = yellow_fill
             
             # Change text colour to red if Volatility 20 Z-Score is greater than 2
             if volatility20_cell.value > 2:
@@ -62,9 +62,18 @@ def screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
             elif volatility60_cell.value < - 1:
                 volatility60_cell.font = green_font
 
+            # Highlight the stock if its sector matches
+            if sector_cell.value in sectors_excel_leading + sectors_excel_improving:
+                stock_cell.fill = yellow_fill
+                sector_cell.fill = yellow_fill
+
+            # Change text colour to green if MVP
+            if mvp_cell.value == "MVP":
+                mvp_cell.font = green_font
+
             # Change text colour to red if VCP is True
             if vcp_cell.value == True:
-                vcp_cell.fill = yellow_fill
+                vcp_cell.fill = orange_fill
 
     # Save the changes to the Excel file
     workbook.save(excel_filename)

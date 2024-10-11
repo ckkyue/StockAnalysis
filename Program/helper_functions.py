@@ -31,9 +31,15 @@ def get_df(stock, end_date, redownload=False):
         for date in dates:
             if date < max_date:
                 os.remove(os.path.join(folder_path, f"{stock}_{date}.csv"))
-
+        # Define the filename
+        if end_date >= max_date:
+            filename = os.path.join(folder_path, f"{stock}_{end_date}.csv")
+        else:
+            filename = os.path.join(folder_path, f"{stock}_{max_date}.csv")
+    else:
+        filename = os.path.join(folder_path, f"{stock}_{end_date}.csv")
+    
     # Save the price data to a .csv file if the most updated data do not exist
-    filename = os.path.join(folder_path, f"{stock}_{end_date}.csv")
     if not os.path.isfile(filename) or redownload:
         df = yf.download(stock, start=csv_date, end=end_date)
         if not df.empty:

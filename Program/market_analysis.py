@@ -71,7 +71,7 @@ def screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
             if mvp_cell.value == "MVP":
                 mvp_cell.font = green_font
 
-            # Change text colour to red if VCP is True
+            # Highlight VCP
             if vcp_cell.value == True:
                 vcp_cell.fill = orange_fill
 
@@ -117,7 +117,7 @@ def main():
     # Get the price data of the index
     index_df = get_df(index_name, current_date)
 
-    plot_all = False
+    plot_all = True
     if plot_all:
         # Iterate over all indices and sectors
         for ticker in index_names + sectors:
@@ -178,7 +178,7 @@ def main():
     # Screen the stocks from Excel file
     screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
 
-    plot_marketbreadth = False
+    plot_marketbreadth = True
     if plot_marketbreadth:
         # Get the list of tickers of stock market
         index_df = get_df(index_name, current_date)

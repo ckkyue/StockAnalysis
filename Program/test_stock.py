@@ -3,9 +3,6 @@ import datetime as dt
 from helper_functions import generate_end_dates, stock_market
 import pandas as pd
 from plot import *
-# Set display options to show all rows and columns
-pd.set_option("display.max_rows", None)
-pd.set_option("display.max_columns", None)
 from stock_screener import EM_rating, stoploss_target
 from technicals import *
 
@@ -25,80 +22,83 @@ current_date = start.strftime("%Y-%m-%d")
 #     plot_MFI_RSI(stock, df, save=True)
 #     plot_stocks(["^GSPC", "^GSPC", stock], current_date, save=True)
 
-# # Get the stop loss and target price of a stock
-# stock = "PLTR"
-# df = get_df(stock, current_date)
-# current_close = df["Close"].iloc[-1]
-# stoploss, stoploss_pct, target, target_pct = stoploss_target(stock, current_close, current_date)
-# print(f"Current close: {round(current_close, 2)}.")
-# print(f"Stoploss: {stoploss}, {stoploss_pct} (%).")
-# print(f"Target price: {target}, {target_pct} (%).")
-
-# Choose the stock
-stock = "^HSI"
-
-# Get the price data of the stock
+# Get the stop loss and target price of a stock
+stock = "PGR"
 df = get_df(stock, current_date)
+current_close = df["Close"].iloc[-1]
+stoploss, stoploss_pct, target, target_pct = stoploss_target(stock, 251, current_date)
+print(f"Plan for {stock}.")
+print(f"Current close: {round(current_close, 2)}.")
+print(f"Stoploss: {stoploss}, {stoploss_pct} (%).")
+print(f"Target price: {target}, {target_pct} (%).")
 
-# Add indicators
-df = add_indicator(df)
-df = calculate_ZScore(df, ["MFI", "RSI"], period=252*15)
+hsi_mfirsi = False
+if hsi_mfirsi:
+    # Choose the stock
+    stock = "^HSI"
 
-# Save the data of the index to a .csv file
-filename = f"Price data/{stock}_{current_date}.csv"
-df.to_csv(filename)
+    # Get the price data of the stock
+    df = get_df(stock, current_date)
 
-periods = [5, 10, 15, 20, 30, 60]
-for period in periods:
-    df[f"Close {period} Later"] = df["Close"].shift(- period)
-    df[f"{period} Days Return (%)"] = ((df[f"Close {period} Later"] / df["Close"]) - 1) * 100
+    # Add indicators
+    df = add_indicator(df)
+    df = calculate_ZScore(df, ["MFI", "RSI"], period=252*15)
 
-# # Filter for MFI/RSI Z-Score >= 2.5
-# df_MFIRSI_filter = df[(df["MFI Z-Score"] >= 2.5)]
-# print(df_MFIRSI_filter)
+    # Save the data of the index to a .csv file
+    filename = f"Price data/{stock}_{current_date}.csv"
+    df.to_csv(filename)
 
-# # Plot histogram
-# for period in periods:
-#     # Create a figure
-#     plt.figure(figsize=(10, 6))
+    periods = [5, 10, 15, 20, 30, 60]
+    for period in periods:
+        df[f"Close {period} Later"] = df["Close"].shift(- period)
+        df[f"{period} Days Return (%)"] = ((df[f"Close {period} Later"] / df["Close"]) - 1) * 100
 
-#     # Plot the histogram
-#     plt.hist(df_MFIRSI_filter[f"{period} Days Return (%)"].dropna(), bins=30, label=f'{period} Days Return (%)')
+    # Filter for MFI/RSI Z-Score >= 2.5
+    df_MFIRSI_filter = df[(df["MFI Z-Score"] >= 2.5)]
+    print(df_MFIRSI_filter)
 
-#     # Calculate the mean
-#     mean = df_MFIRSI_filter.loc[:, f"{period} Days Return (%)"].mean()
+    # Plot histogram
+    for period in periods:
+        # Create a figure
+        plt.figure(figsize=(10, 6))
 
-#     # Draw a vertical line at the mean
-#     plt.axvline(mean, color="red", linestyle="dashed", linewidth=1.5, label=f"Mean: {mean:.2f}%")
+        # Plot the histogram
+        plt.hist(df_MFIRSI_filter[f"{period} Days Return (%)"].dropna(), bins=30, label=f'{period} Days Return (%)')
 
-#     # Set the y-axis ticks to integers
-#     y_ticks = np.arange(0, plt.ylim()[1] + 1, 1)
-#     plt.yticks(y_ticks)
+        # Calculate the mean
+        mean = df_MFIRSI_filter.loc[:, f"{period} Days Return (%)"].mean()
 
-#     # Set the labels
-#     plt.xlabel("Return (%)")
-#     plt.ylabel("Count")
+        # Draw a vertical line at the mean
+        plt.axvline(mean, color="red", linestyle="dashed", linewidth=1.5, label=f"Mean: {mean:.2f}%")
 
-#     # Set the title
-#     plt.title(rf"{period} days return when MFI Z-Score$\geq 2.5$ (%)")
+        # Set the y-axis ticks to integers
+        y_ticks = np.arange(0, plt.ylim()[1] + 1, 1)
+        plt.yticks(y_ticks)
 
-#     # Set the legend
-#     plt.legend()
+        # Set the labels
+        plt.xlabel("Return (%)")
+        plt.ylabel("Count")
 
-#     # Adjust the spacing
-#     plt.tight_layout()
+        # Set the title
+        plt.title(rf"{period} days return when MFI Z-Score$\geq 2.5$ (%)")
 
-#     # Save the plot
-#     plt.savefig(f"Result/Figure/{period}returnMFIZgeq2.5.png", dpi=300)
+        # Set the legend
+        plt.legend()
 
-#     # Show the plot
-#     plt.show()
+        # Adjust the spacing
+        plt.tight_layout()
+
+        # Save the plot
+        plt.savefig(f"Result/Figure/{period}returnMFIZgeq2.5.png", dpi=300)
+
+        # Show the plot
+        plt.show()
 
 compare_jdhsi = False
 if compare_jdhsi:
     # Test the correlation between 京東 and HSI
-    jd_df = get_df("9618.HK", current_date)
-    hsi_df = get_df("^HSI", current_date)
+    jd_df = get_df("9618.HK", current_date, redownload=True)
+    hsi_df = get_df("^HSI", current_date, redownload=True)
 
     # Calculate percentage change for both
     show = 120
@@ -167,7 +167,7 @@ if compare_jdhsi:
     plt.tight_layout()
 
     # Save the plot
-    plt.savefig(f"Result/Figure/{min_factor:.2f}xHSIJDperiod{show}.png", dpi=300)
+    plt.savefig(f"Result/Figure/HSIJDperiod{show}.png", dpi=300)
 
     # Show the plot
     plt.show()

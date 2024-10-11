@@ -23,10 +23,10 @@ current_date = start.strftime("%Y-%m-%d")
 #     plot_stocks(["^GSPC", "^GSPC", stock], current_date, save=True)
 
 # Get the stop loss and target price of a stock
-stock = "PGR"
+stock = "HBM"
 df = get_df(stock, current_date)
 current_close = df["Close"].iloc[-1]
-stoploss, stoploss_pct, target, target_pct = stoploss_target(stock, 251, current_date)
+stoploss, stoploss_pct, target, target_pct = stoploss_target(stock, 9.38, current_date)
 print(f"Plan for {stock}.")
 print(f"Current close: {round(current_close, 2)}.")
 print(f"Stoploss: {stoploss}, {stoploss_pct} (%).")

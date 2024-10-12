@@ -117,7 +117,7 @@ def main():
     # Get the price data of the index
     index_df = get_df(index_name, current_date)
 
-    plot_all = True
+    plot_all = False
     if plot_all:
         # Iterate over all indices and sectors
         for ticker in index_names + sectors:

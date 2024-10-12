@@ -12,8 +12,8 @@ start = dt.datetime.now()
 # Initial setup
 current_date = start.strftime("%Y-%m-%d")
 
-# # Choose the stocks
-# stocks = ["ACIW", "1810.HK", "3690.HK", "3998.HK"]
+# Choose the stocks
+stocks = ["CLS", "CORZ", "HBM", "PLTR", "PGR", "VRT", "1810.HK", "3690.HK", "3998.HK"]
 
 # # Iterate over stocks
 # for stock in stocks:

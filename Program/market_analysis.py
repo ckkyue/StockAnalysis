@@ -77,7 +77,7 @@ def screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
 
     # Save the changes to the Excel file
     workbook.save(excel_filename)
-    print("Changes made to the Excel file.")
+    print(f"Changes made to the Excel file {excel_filename}.")
 
 # Main function
 def main():

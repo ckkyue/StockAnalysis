@@ -1,7 +1,7 @@
 # Imports
 import datetime as dt
 from dateutil.relativedelta import relativedelta
-from helper_functions import get_df, get_infix
+from helper_functions import get_df, get_infix, merge_stocks
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -363,40 +363,22 @@ def plot_market_breadth(index_name, index_df, tickers, periods=[20, 50, 200], sh
 
 # Plot to compare the closing price history of stocks
 def plot_stocks(stocks, current_date, column="Close", show=120, save=False):
-    # Get the first stock
-    stock_first = stocks[0]
+    # Merge dataframes of stocks
+    df_merged = merge_stocks(stocks, current_date)
 
-    # Get the price data of the first stock
-    df_first = get_df(stocks[0], current_date)
-
-    # Filter the data
-    df_first = df_first[- show:]
-
-    # Get the first closing price of the first stock
-    close_first0 = df_first[column].iloc[0]
+    # Restrict the dataframe
+    df_merged = df_merged[- show:]
 
     # Create a figure
     plt.figure(figsize=(10, 6))
 
-    # Plot the closing price history of the first stock
-    plt.plot(100 / close_first0 * df_first[column], label=f"{stock_first} (scaled)")
-
-    # Get the price data of the remaining stocks
-    for stock in stocks[1:]:
-        # Get the price data of the stock
-        df = get_df(stock, current_date)
-
-        # Filter the data
-        df = df[- show:]
-
-        # Get the first closing price of the stock
-        close_first = df[column].iloc[0]
-
-        # Plot the closing price history
-        plt.plot(100 / close_first * df[column], label=f"{stock} (scaled)")
+    # Plot the closing price history of the stocks
+    for stock in stocks:
+        close_first = df_merged[f"{column} ({stock})"].iloc[0]
+        plt.plot(100 / close_first * df_merged[f"{column} ({stock})"], label=f"{stock} (scaled)")
 
     # Set the x limit
-    plt.xlim(df_first.index[0], df_first.index[-1])
+    plt.xlim(df_merged.index[0], df_merged.index[-1])
 
     # Set the labels
     plt.xlabel("Date")
@@ -406,8 +388,8 @@ def plot_stocks(stocks, current_date, column="Close", show=120, save=False):
     plt.legend()
 
     # Set the title
-    plt.title("Closing price history for stocks")
-
+    plt.title(f"Closing price history for {', '.join(stocks)}")
+    
     # Adjust the spacing
     plt.tight_layout()
 
@@ -616,15 +598,14 @@ def plot_corr_ta(stock, df, column_list=["Open", "High", "Low", "Close", "Volume
 # Plot the correlation matrix of stocks
 def plot_corr_stocks(stocks, end_date, years):
     # Get the price data of the stocks
-    dfs = [get_df(stock, end_date) for stock in stocks]
+    df_merged = merge_stocks(stocks, end_date)
 
-    # Join the dataframes on the index, keeping only the matched rows
-    df_merged = dfs[0]
-    for i in range(1, len(dfs)):
-        df_merged = df_merged.join(dfs[i], how="inner", rsuffix=f"_df{i}")
+    # Restrict the dataframe
+    show = int(years * 252)
+    df_merged = df_merged[- show:]
     dfs_close = [df_merged["Close"].values]
-    for i in range(1, len(dfs)):
-        dfs_close.append(df_merged[f"Close_df{i}"].values)
+    for i in range(1, len(stocks)):
+        dfs_close.append(df_merged[f"Close ({stocks[i]})"].values)
 
     # Create the data with the aligned values
     data = np.array(dfs_close)

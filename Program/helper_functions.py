@@ -119,6 +119,20 @@ def get_excel_filename(end_date, index_name, index_dict, period_hk, period_us, R
 
         return excel_filename
 
+# Merge dataframes of stocks
+def merge_stocks(stocks, end_date):
+    # Get the price data of the stocks
+    dfs = [get_df(stock, end_date) for stock in stocks]
+
+    # Rename the columns of the first DataFrame to include the stock name
+    df_merged = dfs[0].rename(columns=lambda col: f"{col} ({stocks[0]})")
+
+    # Join the remaining DataFrames with the appropriate suffix
+    for i in range(1, len(dfs)):
+        df_merged = df_merged.join(dfs[i].rename(columns=lambda col: f"{col} ({stocks[i]})"), how="inner")
+
+    return df_merged
+
 # Get the list of tickers of stock market
 def stock_market(end_date, current_date, index_name, NASDAQ_all):
     # HKEX

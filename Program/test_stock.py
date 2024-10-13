@@ -35,7 +35,7 @@ stocks = ["CORZ", "HBM", "PLTR", "PGR", "VRT", "1810.HK", "3690.HK", "3998.HK"]
 # print(f"Stoploss: {stoploss}, {stoploss_pct} (%).")
 # print(f"Target price: {target}, {target_pct} (%).")
 
-compare_metal = True
+compare_metal = False
 if compare_metal:
     show = 252 * 3
     stocks = ["GC=F", "SI=F", "HG=F"]

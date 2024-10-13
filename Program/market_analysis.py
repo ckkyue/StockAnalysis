@@ -99,7 +99,7 @@ def main():
 
     # Index
     index_name = "^GSPC"
-    index_names = ["^HSI", "^GSPC", "^IXIC", "^DJI", "IWM", "FFTY", "QQQE", "KWEB", "GC=F"]
+    index_names = ["^HSI", "^GSPC", "^IXIC", "^DJI", "IWM", "FFTY", "QQQE", "GC=F"]
     index_dict = {"^HSI": "HKEX", "^GSPC": "S&P 500", "^IXIC": "NASDAQ Composite", "^DJI": "Dow Jones Industrial Average", 
                   "IWM": "iShares Russell 2000 ETF", "FFTY": "Innovator IBD 50 ETF", "QQQE": "NASDAQ-100 Equal Weighted ETF", 
                   "KWEB": "KraneShares CSI China Internet ETF", "GC=F": "Gold"}
@@ -173,6 +173,7 @@ def main():
 
     # Plot the relative rotation graph
     plot_rrg(sectors, sector_dict, index_df, "sector", save=True)
+    # plot_rrg(index_names, index_dict, index_df, "sector", save=True)
 
     # Plot the sectors of the selected stocks
     plot_sector_selected(current_date, "^GSPC", index_dict, NASDAQ_all=NASDAQ_all, save=True)

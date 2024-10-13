@@ -472,7 +472,10 @@ def plot_rrg(sectors, sector_dict, index_df, type, points=8, interval=5, save=Fa
     for i, sector in enumerate(sectors):
         if sector == "^GSPC":
             continue
-        color = colors[i]
+        if sector == "GC=F":
+            color = "Gold"
+        else:
+            color = colors[i]
         label = sector_dict[sector]
 
         # Scatter the points

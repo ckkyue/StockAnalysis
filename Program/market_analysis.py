@@ -173,7 +173,7 @@ def main():
     plot_sector_selected(current_date, "^GSPC", index_dict, NASDAQ_all=NASDAQ_all, save=True)
 
     # Get the Excel filename
-    excel_filename = get_excel_filename(current_date, index_name, index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)
+    excel_filename = get_excel_filename(current_date, "^HSI", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)
 
     # Screen the stocks from Excel file
     screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)

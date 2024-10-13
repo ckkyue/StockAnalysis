@@ -6,6 +6,10 @@ from openpyxl.styles import Font, PatternFill
 from plot import *
 from technicals import *
 
+# # Display the whole dataframe
+# pd.set_option("display.max_rows", None)
+# pd.set_option("display.max_columns", None)
+
 # Screen the stocks from Excel file
 def screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving):
     # Load the workbook and select the active sheet
@@ -95,10 +99,11 @@ def main():
 
     # Index
     index_name = "^GSPC"
-    index_names = ["^HSI", "^GSPC", "^IXIC", "^DJI", "IWM", "FFTY", "QQQE"]
+    index_names = ["^HSI", "^GSPC", "^IXIC", "^DJI", "IWM", "FFTY", "QQQE", "KWEB", "GC=F"]
     index_dict = {"^HSI": "HKEX", "^GSPC": "S&P 500", "^IXIC": "NASDAQ Composite", "^DJI": "Dow Jones Industrial Average", 
-                  "IWM": "iShares Russell 2000 ETF", "FFTY": "Innovator IBD 50 ETF", "QQQE": "NASDAQ-100 Equal Weighted ETF"}
-    
+                  "IWM": "iShares Russell 2000 ETF", "FFTY": "Innovator IBD 50 ETF", "QQQE": "NASDAQ-100 Equal Weighted ETF", 
+                  "KWEB": "KraneShares CSI China Internet ETF", "GC=F": "Gold"}
+     
     # Sectors
     sectors = ["XLC", "XLY", "XLP", "XLE", "XLF", "XLV", 
             "XLI", "XLB", "XLRE", "XLK", "XLU"]
@@ -128,7 +133,7 @@ def main():
             plot_close(ticker, df, MVP_VCP=False, save=True)
 
     # Calculate the JdK RS-Ratio and Momentum
-    index_df = get_JdK(sectors, index_df, current_date)
+    index_df = get_JdK(index_names + sectors, index_df, current_date)
 
     # Print the leading, weakening, improving and lagging sectors
     sectors_leading = []
@@ -167,13 +172,13 @@ def main():
             plot_JdK(sector, sector_dict, index_df, save=True)
 
     # Plot the relative rotation graph
-    plot_rrg(sectors, sector_dict, index_df, save=True)
+    plot_rrg(sectors, sector_dict, index_df, "sector", save=True)
 
     # Plot the sectors of the selected stocks
     plot_sector_selected(current_date, "^GSPC", index_dict, NASDAQ_all=NASDAQ_all, save=True)
 
     # Get the Excel filename
-    excel_filename = get_excel_filename(current_date, "^HSI", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)
+    excel_filename = get_excel_filename(current_date, "^GSPC", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)
 
     # Screen the stocks from Excel file
     screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)

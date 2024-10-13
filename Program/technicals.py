@@ -377,4 +377,7 @@ def get_JdK(sectors, index_df, end_date, period_short=12, period_long=26, period
         index_df[f"{sector} JdK RS-Ratio"] = df_copy["JdK RS-Ratio"]
         index_df[f"{sector} JdK RS-Momentum"] = df_copy["JdK RS-Momentum"]
 
+        # Fill NaN values with the previous value
+        index_df = index_df.ffill()
+
     return index_df

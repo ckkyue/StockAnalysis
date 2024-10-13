@@ -457,9 +457,9 @@ def plot_JdK(sector, sector_dict, index_df, show=120, save=False):
     plt.show()
 
 # Plot the relative rotation graph
-def plot_rrg(sectors, sector_dict, index_df, points=8, interval=5, save=False):
-    # Define the colours
-    colors = plt.cm.tab10(range(10)).tolist() + ["peachpuff"]
+def plot_rrg(sectors, sector_dict, index_df, type, points=8, interval=5, save=False):
+    # Define the colors
+    colors = plt.cm.tab10(range(10)).tolist() + ["peru", "navy", "mediumspringgreen", "olivexs"]
 
     # Create a figure and axes
     fig, ax1 = plt.subplots(figsize=(8, 6))
@@ -470,6 +470,8 @@ def plot_rrg(sectors, sector_dict, index_df, points=8, interval=5, save=False):
 
     # Plot the JdK RS-Ratio and Momentum for each sector
     for i, sector in enumerate(sectors):
+        if sector == "^GSPC":
+            continue
         color = colors[i]
         label = sector_dict[sector]
 
@@ -497,7 +499,10 @@ def plot_rrg(sectors, sector_dict, index_df, points=8, interval=5, save=False):
     ax1.set_ylabel("JdK RS-Momentum")
 
     # Set the title
-    ax1.set_title("Relative rotation graph")
+    if type == "sector":
+        ax1.set_title("Relative rotation graph of sectors")
+    elif type == "index":
+        ax1.set_title("Relative rotation graph of indices")
 
     # Add horizontal and vertical lines to (100, 100) origin
     ax1.axhline(y=100, linestyle="--", color="black")
@@ -527,10 +532,13 @@ def plot_rrg(sectors, sector_dict, index_df, points=8, interval=5, save=False):
 
     # Adjust the spacing between subplots
     plt.tight_layout()
-
+    
     # Save the plot
     if save:
-        plt.savefig(f"Result/Figure/rrg.png", dpi=300)
+        if type == "sector":
+            plt.savefig(f"Result/Figure/sectorrrg.png", dpi=300)
+        elif type == "index":
+            plt.savefig(f"Result/Figure/indexrrg.png", dpi=300)
     else:
         pass
 

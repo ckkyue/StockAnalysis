@@ -54,9 +54,9 @@ if compare_metal:
     close_goldfirst = metal_df["Close (GC=F)"].iloc[0]
     close_silverfirst = metal_df["Close (SI=F)"].iloc[0]
     close_copperfirst = metal_df["Close (HG=F)"].iloc[0]
-    ax1.plot(100 / close_goldfirst * metal_df["Close (GC=F)"], label="Gold (scaled)")
-    ax1.plot(100 / close_silverfirst * metal_df["Close (SI=F)"], label="Silver (scaled)")
-    ax1.plot(100 / close_copperfirst * metal_df["Close (HG=F)"], label="Copper (scaled)")
+    ax1.plot(100 / close_goldfirst * metal_df["Close (GC=F)"], label="Gold (scaled)", color="gold")
+    ax1.plot(100 / close_silverfirst * metal_df["Close (SI=F)"], label="Silver (scaled)", color="silver")
+    ax1.plot(100 / close_copperfirst * metal_df["Close (HG=F)"], label="Copper (scaled)", color="peru")
 
     # Set the label of the first subplot
     ax1.set_ylabel("Price")
@@ -67,16 +67,16 @@ if compare_metal:
     # Plot the ratios on the second subplot
     goldsilver_ratio_first = metal_df["Gold/Silver Ratio"].iloc[0]
     goldcopper_ratio_first = metal_df["Gold/Copper Ratio"].iloc[0]
-    ax2.plot(100 / goldsilver_ratio_first * metal_df["Gold/Silver Ratio"], color=colors[1])
-    ax2.plot(100 / goldcopper_ratio_first * metal_df["Gold/Copper Ratio"], color=colors[2])
+    ax2.plot(100 / goldsilver_ratio_first * metal_df["Gold/Silver Ratio"], color="silver")
+    ax2.plot(100 / goldcopper_ratio_first * metal_df["Gold/Copper Ratio"], color="peru")
 
     # Set the y label of the second subplot
     ax2.set_ylabel("Ratio wrt Gold")
 
     # Plot the ratios z-score on the third subplot
-    ax3.plot(metal_df["Gold/Silver Ratio Z-Score"], color=colors[1])
-    ax3.plot(metal_df["Gold/Copper Ratio Z-Score"], color=colors[2])
-    ax3.axhline(y=2, linestyle="dotted", label="Undervalued", color="gray")
+    ax3.plot(metal_df["Gold/Silver Ratio Z-Score"], color="silver")
+    ax3.plot(metal_df["Gold/Copper Ratio Z-Score"], color="peru")
+    ax3.axhline(y=2, linestyle="dotted", label="Undervalued", color="green")
     ax3.axhline(y=-2, linestyle="dotted", label="Overvalued", color="red")
 
     # Set the y label of the second subplot

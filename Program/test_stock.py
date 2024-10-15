@@ -19,7 +19,7 @@ current_date = start.strftime("%Y-%m-%d")
 stocks = ["CORZ", "HBM", "PLTR", "PGR", "VRT", "1810.HK", "3690.HK", "3998.HK"]
 
 # # Iterate over stocks
-# for stock in stocks:
+# for stock in stocks:\\\\\
 #     df = get_df(stock, current_date)
 #     plot_close(stock, df, save=True)
 #     plot_MFI_RSI(stock, df, save=True)
@@ -79,7 +79,7 @@ if compare_metal:
     ax3.axhline(y=2, linestyle="dotted", label="Undervalued", color="green")
     ax3.axhline(y=-2, linestyle="dotted", label="Overvalued", color="red")
 
-    # Set the y label of the second subplot
+    # Set the y label of the third subplot
     ax3.set_ylabel("Ratio z-score")
 
     # Set the x label

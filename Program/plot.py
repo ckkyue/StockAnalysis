@@ -235,6 +235,98 @@ def plot_MFI_RSI(stock, df, show=252, save=False):
     # Show the plot
     plt.show()
 
+# Plot the volatility
+def plot_volatility(stock, df, period, show=120, save=False):
+    # Add technical indicators to the data
+    add_indicator(df)
+
+    # Calculate the volume SMA 50 ratio
+    df["Volume SMA 50 Ratio"] = df["Volume"] / df["Volume SMA 50"]
+
+    # Calculate the product of range and volume SMA 50 ratio
+    df["Range * Volume SMA 50 Ratio"] = df["Range"] * df["Volume SMA 50 Ratio"]
+
+    # Calculate the z-scores of range and Volume SMA 50 Ratio
+    df = calculate_ZScore(df, ["Range", "Volume SMA 50 Ratio", "Range * Volume SMA 50 Ratio"], period)
+
+    # Filter the data
+    df = df[- show:]
+
+    # Define the widths
+    width_candle = 1
+    width_stick = 0.2
+
+    # Separate the dataframe into green and red candlesticks
+    up_df = df[df["Close"] >= df["Open"]]
+    down_df = df[df["Close"] <= df["Open"]]
+    colour_up = "green"
+    colour_down = "red"
+
+    # Create a figure with four subplots, one for the price, one for the range z-score, one for the volume SMA 50 ratio z-score, and one for the combined z-score
+    fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(8, 8), gridspec_kw={"height_ratios": [1, 1, 1, 1]}, sharex=True)
+
+    # Plot the up prices on the top subplot
+    ax1.bar(up_df.index, up_df["Close"] - up_df["Open"], width_candle, bottom=up_df["Open"], color=colour_up)
+    ax1.bar(up_df.index, up_df["High"] - up_df["Close"], width_stick, bottom=up_df["Close"], color=colour_up)
+    ax1.bar(up_df.index, up_df["Low"] - up_df["Open"], width_stick, bottom=up_df["Open"], color=colour_up)
+
+    # Plot the down prices on the top subplot
+    ax1.bar(down_df.index, down_df["Close"] - down_df["Open"], width_candle, bottom=down_df["Open"], color=colour_down)
+    ax1.bar(down_df.index, down_df["High"] - down_df["Open"], width_stick, bottom=down_df["Open"], color=colour_down)
+    ax1.bar(down_df.index, down_df["Low"] - down_df["Close"], width_stick, bottom=down_df["Close"], color=colour_down)
+
+    # Set the label of the first subplot
+    ax1.set_ylabel("Price")
+
+    # Set the x limit of the first subplot
+    ax1.set_xlim(df.index[0], df.index[-1])
+
+    # Plot the range z-score on the second subplot
+    ax2.plot(df["Range Z-Score"])
+    ax2.axhline(y=2, linestyle="dotted", label="Expansion", color="red")
+    ax2.axhline(y=-2, linestyle="dotted", label="Contraction", color="green")
+
+    # Set the y label of the second subplot
+    ax2.set_ylabel("TR Z-Score")
+
+    # Plot the volume SMA 50 ratio z-score on the third subplot
+    ax3.plot(df["Volume SMA 50 Ratio Z-Score"])
+    ax3.axhline(y=2, linestyle="dotted", label="Expansion", color="red")
+    ax3.axhline(y=-2, linestyle="dotted", label="Contraction", color="green")
+
+    # Set the y label of the third subplot
+    ax3.set_ylabel("Vol/SMA50 Ratio Z-Score")
+
+    # Plot the z-score of the product of range and volume SMA 50 ratio
+    ax4.plot(df["Range * Volume SMA 50 Ratio Z-Score"])
+    ax4.axhline(y=2, linestyle="dotted", label="Expansion", color="red")
+    ax4.axhline(y=-2, linestyle="dotted", label="Contraction", color="green")
+
+    # Set the y label of the fourth subplot
+    ax4.set_ylabel("Combined Z-Score")
+
+    # Set the x label
+    plt.xlabel("Date")
+
+    # Set the title
+    plt.suptitle(f"Volatility of {stock}")
+
+    # Combine the legends and place them at the top subplot
+    handles, labels = ax1.get_legend_handles_labels()
+    handles += ax2.get_legend_handles_labels()[0]
+    labels += ax2.get_legend_handles_labels()[1]
+    ax1.legend(handles, labels)
+
+    # Adjust the spacing between subplots
+    plt.tight_layout()
+
+    # Save the plot
+    if save:
+        plt.savefig(f"Result/Figure/volatility{stock}.png", dpi=300)    
+
+    # Show the plot
+    plt.show()
+
 # Plot the follow-through days (FTDs) and distribution days (DDs)
 def plot_FTD_DD(stock, df, show=252*2, save=False):
     # Add technical indicators to the data

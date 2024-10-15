@@ -35,6 +35,10 @@ stocks = ["CORZ", "HBM", "PLTR", "PGR", "VRT", "1810.HK", "3690.HK", "3998.HK"]
 # print(f"Stoploss: {stoploss}, {stoploss_pct} (%).")
 # print(f"Target price: {target}, {target_pct} (%).")
 
+stock = "^HSI"
+df = get_df(stock, current_date)
+plot_volatility(stock, df, 3 * 252)
+
 compare_metal = False
 if compare_metal:
     show = 252 * 3

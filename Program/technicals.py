@@ -252,6 +252,59 @@ def multiple_FTD_DD(data, period=10, columns=["FTD", "DD"]):
 
     return data
 
+# Locate the local extrema
+def get_local_extrema(data, min_column="Low", max_column="High", period=5):
+    # Find local minima and maxima
+    local_min = data[min_column].rolling(period, center=True, min_periods=2).min() == data[min_column]
+    local_max = data[max_column].rolling(period, center=True, min_periods=2).max() == data[max_column]
+
+    # Create new columns for local min and max locations
+    data["Local Min"] = local_min
+    data["Local Max"] = local_max
+
+    return data
+
+# Calculate the most recent retracement
+def calculate_retracement(data, min_column="Low", max_column="High", buffer=15):
+    # Find indices of local mins and maxes
+    min_indices = data[data["Local Min"]].index
+    max_indices = data[data["Local Max"]].index
+
+    # Handle empty cases
+    if min_indices.empty or max_indices.empty:
+        return None
+
+    min_index1 = min_indices[-1]
+
+    # Initialize an empty list to store the most recent max
+    max_index_list = []
+
+    # Iterate backwards to find the three most recent max
+    for i in reversed(max_indices):
+        if i < min_index1:
+            max_index_list.append(i)
+            if len(max_index_list) == 3:
+                break
+
+    # Handle empty cases
+    if len(max_index_list) < 1:
+        return None
+    
+    local_min1 = data.loc[min_index1, min_column]
+    
+    # Retrieve local max values
+    local_max_values = [data.loc[index, max_column] for index in max_index_list]
+    local_max = local_max_values[0]
+
+    # Check conditions for local_max2 and local_max3
+    for i in range(1, len(local_max_values)):
+        if (max_index_list[0] - max_index_list[i]).days <= buffer:
+            local_max = max(local_max, local_max_values[i])
+
+    retracement = 1 - local_min1 / local_max
+
+    return np.array([local_min1, local_max, retracement])
+
 # Calculate the Z-Score
 def calculate_ZScore(data, indicators, period):
     for indicator in indicators:

@@ -9,6 +9,17 @@ from scipy.stats import linregress
 from yahoo_fin import stock_info as si
 import yfinance as yf
 
+# Get the current date
+def get_current_date(start):
+    # Check if today is Sunday
+    if start.weekday() == 6:
+        # Revert back one day
+        current_date = (start - dt.timedelta(days=1)).strftime("%Y-%m-%d")
+    else:
+        current_date = start.strftime("%Y-%m-%d")
+    
+    return current_date
+
 # Get the price data of a stock
 def get_df(stock, end_date, redownload=False):
     # Initial setup

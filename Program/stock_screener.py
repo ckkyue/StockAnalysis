@@ -3,7 +3,7 @@ import ast
 import concurrent.futures
 import datetime as dt
 from fundamentals import *
-from helper_functions import generate_end_dates, get_currency, get_df, get_earning_dates, get_excel_filename, get_infix, get_rs_volume, slope_reg, stock_market
+from helper_functions import get_current_date, generate_end_dates, get_currency, get_df, get_earning_dates, get_excel_filename, get_infix, get_rs_volume, slope_reg, stock_market
 import numpy as np
 import pandas as pd
 from pandas import ExcelWriter as EW
@@ -538,7 +538,7 @@ def main():
     print(start, "\n")
 
     # Initial setup
-    current_date = start.strftime("%Y-%m-%d")
+    current_date = get_current_date(start)
 
     # Define the paths for the folders
     folders = ["Price data"]
@@ -562,7 +562,7 @@ def main():
     backtest = False
 
     # Index
-    index_name = "^HSI"
+    index_name = "^GSPC"
     index_dict = {"^HSI": "HKEX", "^GSPC": "S&P 500", "^IXIC": "NASDAQ Composite"}
 
     # Stock selection

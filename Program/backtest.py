@@ -2,7 +2,7 @@
 import ast
 import datetime as dt
 from dateutil.relativedelta import relativedelta
-from helper_functions import generate_end_dates, get_df, get_infix, randomize_array
+from helper_functions import get_current_date, generate_end_dates, get_df, get_infix, randomize_array
 import itertools
 import matplotlib.pyplot as plt
 import numpy as np
@@ -760,7 +760,7 @@ def main():
     start = dt.datetime.now()
 
     # Initial setup
-    current_date = start.strftime("%Y-%m-%d")
+    current_date = get_current_date(start)
 
     # Define the paths for the folders
     folders = ["Result/Figure", "Result/Stock dict"]

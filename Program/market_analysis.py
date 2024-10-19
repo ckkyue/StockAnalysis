@@ -1,9 +1,11 @@
 # Import
 import datetime as dt
-from helper_functions import get_df, get_excel_filename, stock_market
+from helper_functions import get_current_date, get_df, get_excel_filename, stock_market
 import openpyxl
 from openpyxl.styles import Font, PatternFill
+from pandas import ExcelWriter as EW
 from plot import *
+import scipy.stats as stats
 from technicals import *
 
 # # Display the whole dataframe
@@ -83,13 +85,51 @@ def screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
     workbook.save(excel_filename)
     print(f"Changes made to the Excel file {excel_filename}.")
 
+# Calculate the retracement for stocks
+def retracement_excel(excel_filename, end_date, min_column="Low", max_column="High", period=5, buffer=15):
+    # Read the screened stocks
+    df = pd.read_excel(excel_filename)
+
+    # Initialize a list to store retracement values
+    retracements = []
+
+    # Get the list of stocks
+    stocks = df["Stock"].tolist()
+
+    # Iterate over all stocks
+    for stock in stocks:
+        data = get_df(stock, end_date)
+        data = get_local_extrema(data, min_column=min_column, max_column=max_column, period=period)
+        local_min1, local_max, retracement = calculate_retracement(data, min_column=min_column, max_column=max_column, buffer=buffer)
+        retracements.append(retracement)
+
+    retracements = np.array(retracements)
+    retracements_zscore = stats.zscore(retracements)
+
+    # Overwrite or insert the retracement values and z-scores
+    if "Retracement (%)" in df.columns:
+        df["Retracement (%)"] = np.round(retracements * 100, 2)
+    else:
+        df.insert(df.columns.get_loc("Close") + 1, "Retracement (%)", round(retracements * 100, 2))
+
+    if "Retracement Z-Score" in df.columns:
+        df["Retracement Z-Score"] = retracements_zscore
+    else:
+        df.insert(df.columns.get_loc("Retracement (%)") + 1, "Retracement Z-Score", retracements_zscore)
+
+    # Save the changes to the Excel file
+    writer = EW(excel_filename)
+    df.to_excel(writer, sheet_name="Sheet1", index=False)
+    writer._save()
+    print(f"Changes made to the Excel file {excel_filename}.")
+
 # Main function
 def main():
     # Start of the program
     start = dt.datetime.now()
 
     # Initial setup
-    current_date = start.strftime("%Y-%m-%d")
+    current_date = get_current_date(start)
 
    # Variables
     NASDAQ_all = True
@@ -171,20 +211,30 @@ def main():
             # Plot the JdK RS-Ratio and Momentum of the sector
             plot_JdK(sector, sector_dict, index_df, save=True)
 
-    # Plot the relative rotation graph
-    plot_rrg(sectors, sector_dict, index_df, "sector", save=True)
-    # plot_rrg(index_names, index_dict, index_df, "sector", save=True)
+    sector_selected = False
+    if sector_selected:
+        # Plot the relative rotation graph
+        plot_rrg(sectors, sector_dict, index_df, "sector", save=True)
 
-    # Plot the sectors of the selected stocks
-    plot_sector_selected(current_date, "^GSPC", index_dict, NASDAQ_all=NASDAQ_all, save=True)
+        # Plot the sectors of the selected stocks
+        plot_sector_selected(current_date, "^GSPC", index_dict, NASDAQ_all=NASDAQ_all, save=True)
 
-    # Get the Excel filename
-    excel_filename = get_excel_filename(current_date, "^GSPC", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)
+    screen = False
+    if screen:
+        # Get the Excel filename
+        excel_filename = get_excel_filename(current_date, "^GSPC", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)
 
-    # Screen the stocks from Excel file
-    screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
+        # Screen the stocks from Excel file
+        screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
+    
+    hkex_retracement = True
+    if hkex_retracement:
+        # Get the Excel filename
+        excel_filename = get_excel_filename("2024-10-19", "^HSI", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)
 
-    plot_marketbreadth = True
+        retracement_excel(excel_filename, "2024-10-19")
+
+    plot_marketbreadth = False
     if plot_marketbreadth:
         # Get the list of tickers of stock market
         index_df = get_df(index_name, current_date)
@@ -202,7 +252,7 @@ def main():
         plot_close(index_name, index_df, MVP_VCP=False)
         plot_MFI_RSI(index_name, index_df, save=True)
     
-    plot_vix = True
+    plot_vix = False
     if plot_vix:
         # Get the price data of CBOE Volatility Index (VIX)
         vix_df = get_df("^VIX", current_date)

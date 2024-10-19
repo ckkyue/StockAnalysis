@@ -12,9 +12,18 @@ from statsmodels.tsa.stattools import acf
 from technicals import *
 
 # Visualize the closing price history
-def plot_close(stock, df, show=120, MVP_VCP=True, save=False):
+def plot_close(stock, df, show=120, MVP_VCP=True, local_extrema=False, local_extrema_period=5, save=False):
     # Add technical indicators to the data
     add_indicator(df)
+
+    # Find the local extrema
+    df = get_local_extrema(df, period=local_extrema_period)
+
+    # Calculate the retracement
+    local_min1, local_max1, retracement = calculate_retracement(df)
+
+    # Calculate the percentage of retracement
+    retracement_pct = round(retracement * 100, 2) if retracement is not None else None
 
     # Filter the data
     df = df[- show:]
@@ -47,14 +56,24 @@ def plot_close(stock, df, show=120, MVP_VCP=True, save=False):
 
     # Plot the MVP and VCP conditions on the top subplot
     if MVP_VCP:
-        ax1.scatter(df.index[df["MVP"] == "M"], df["Close"][df["MVP"] == "M"], marker="^", color="grey", label="M")
-        ax1.scatter(df.index[df["MVP"] == "MP"], df["Close"][df["MVP"] == "MP"], marker="^", color="yellow", label="MP")
-        ax1.scatter(df.index[df["MVP"] == "MV"], df["Close"][df["MVP"] == "MV"], marker="^", color="blue", label="MV")
-        ax1.scatter(df.index[df["MVP"] == "MVP"], df["Close"][df["MVP"] == "MVP"], marker="^", color="green", label="MVP")
-        ax1.scatter(df.index[df["VCP"] == True], df["Close"][df["VCP"] == True], marker=">", color="orange", label="VCP")
+        ax1.scatter(df.index[df["MVP"] == "M"], df["Close"][df["MVP"] == "M"], marker="^", edgecolor="black", facecolors="grey", label="M")
+        ax1.scatter(df.index[df["MVP"] == "MP"], df["Close"][df["MVP"] == "MP"], marker="^", edgecolor="black", facecolors="yellow", label="MP")
+        ax1.scatter(df.index[df["MVP"] == "MV"], df["Close"][df["MVP"] == "MV"], marker="^", edgecolor="black", facecolors="blue", label="MV")
+        ax1.scatter(df.index[df["MVP"] == "MVP"], df["Close"][df["MVP"] == "MVP"], marker="^", edgecolor="black", facecolors="green", label="MVP")
+        ax1.scatter(df.index[df["VCP"] == True], df["Close"][df["VCP"] == True], marker=">", edgecolor="black", facecolors="orange", label="VCP")
     else:
         pass
 
+    # Scatter points for local minima and maxima
+    if local_extrema:
+        ax1.scatter(df.index[df["Local Min"]], df["Low"][df["Local Min"]], label="Local extrema", marker="x", color="black")
+        ax1.scatter(df.index[df["Local Max"]], df["High"][df["Local Max"]], marker="x", color="black")
+
+        # Add retracement percentage as text on the plot
+        if retracement_pct is not None:
+            ax1.text(0.4, 0.95, f"Retracement: {retracement_pct}%\nRecent min: {round(local_min1, 2)}\nRecent max: {round(local_max1, 2)}", 
+                    transform=ax1.transAxes, fontsize=10, ha="left", va="top", bbox=dict(facecolor="white", alpha=0.5))
+            
     # Plot the SMAs on the top subplot
     periods = [5, 20, 50, 200]
     for i in periods:
@@ -96,99 +115,6 @@ def plot_close(stock, df, show=120, MVP_VCP=True, save=False):
     # Save the plot
     if save:
         plt.savefig(f"Result/Figure/close{stock}.png", dpi=300)
-    else:
-        pass
-
-    # Show the plot
-    plt.show()
-
-# Visualize the closing price history with local extrema
-def plot_local_extrema(stock, df, period=5, show=60, save=False):
-    # Add technical indicators to the data
-    add_indicator(df)
-
-    # Find the local extrema
-    df = get_local_extrema(df, period=period)
-
-    # Calculate the retracement
-    local_min1, local_max1, retracement = calculate_retracement(df)
-
-    # Calculate the percentage of retracement
-    retracement_pct = round(retracement * 100, 2) if retracement is not None else None
-
-    # Filter the data
-    df = df[- show:]
-
-    # Define the widths
-    width_candle = 1
-    width_stick = 0.2
-
-    # Separate the dataframe into green and red candlesticks
-    up_df = df[df["Close"] >= df["Open"]]
-    down_df = df[df["Close"] <= df["Open"]]
-    colour_up = "green"
-    colour_down = "red"
-
-    # Create a figure with two subplots, one for the closing price and one for the volume
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 8), gridspec_kw={"height_ratios": [5, 1]}, sharex=True)
-
-    # Plot the up prices on the top subplot
-    ax1.bar(up_df.index, up_df["Close"] - up_df["Open"], width_candle, bottom=up_df["Open"], color=colour_up)
-    ax1.bar(up_df.index, up_df["High"] - up_df["Close"], width_stick, bottom=up_df["Close"], color=colour_up)
-    ax1.bar(up_df.index, up_df["Low"] - up_df["Open"], width_stick, bottom=up_df["Open"], color=colour_up)
-
-    # Plot the down prices on the top subplot
-    ax1.bar(down_df.index, down_df["Close"] - down_df["Open"], width_candle, bottom=down_df["Open"], color=colour_down)
-    ax1.bar(down_df.index, down_df["High"] - down_df["Open"], width_stick, bottom=down_df["Open"], color=colour_down)
-    ax1.bar(down_df.index, down_df["Low"] - down_df["Close"], width_stick, bottom=down_df["Close"], color=colour_down)
-
-    # Scatter points for local minima
-    ax1.scatter(df.index[df["Local Min"]], df["Low"][df["Local Min"]], label="Local min", marker="v", color="black")
-
-    # Scatter points for local maxima
-    ax1.scatter(df.index[df["Local Max"]], df["High"][df["Local Max"]], label="Local max", marker="^", color="black")
-
-    # Set the y label of the top subplot
-    ax1.set_ylabel("Price")
-
-    # Plot the volume on the bottom subplot
-    ax2.bar(up_df.index, up_df["Volume"], label="Volume (+)", color=colour_up)
-    ax2.bar(down_df.index, down_df["Volume"], label="Volume (-)", color=colour_down)
-
-    # Plot the volume SMA 50 on the bottom subplot
-    ax2.plot(df["Volume SMA 50"], label="Volume SMA 50", color="purple")
-
-    # Set the label of the bottom subplot
-    ax2.set_ylabel("Volume")
-
-    # Set the x limit of the top subplot
-    buffer = relativedelta(days=1)
-    ax1.set_xlim(df.index[0] - buffer, df.index[-1] + buffer)
-
-    # Set the x label
-    plt.xlabel("Date")
-
-    # Add retracement percentage as text on the plot
-    if retracement_pct is not None:
-        ax1.text(0.5, 0.95, f"Retracement: {retracement_pct}%\nRecent min: {round(local_min1, 2)}\nRecent max: {round(local_max1, 2)}", 
-                transform=ax1.transAxes, fontsize=10, ha="left", va="top", bbox=dict(facecolor="white", alpha=0.5))
-
-    # Combine the legends and place them at the top subplot
-    handles, labels = ax1.get_legend_handles_labels()
-    handles += ax2.get_legend_handles_labels()[0]
-    labels += ax2.get_legend_handles_labels()[1]
-
-    ax1.legend(handles, labels)
-
-    # Set the title
-    plt.suptitle(f"Local extrema for {stock}")
-
-    # Adjust the spacing between subplots
-    plt.tight_layout()
-
-    # Save the plot
-    if save:
-        plt.savefig(f"Result/Figure/localextrema{stock}.png", dpi=300)
     else:
         pass
 

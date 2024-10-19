@@ -2,7 +2,7 @@
 from backtest import calculate_stats, stocks_equity_curve
 import datetime as dt
 from dateutil.relativedelta import relativedelta
-from helper_functions import generate_end_dates, get_df, get_infix
+from helper_functions import get_current_date, generate_end_dates, get_df, get_infix
 import itertools
 import matplotlib.pyplot as plt
 import numpy as np
@@ -126,7 +126,7 @@ def main():
     start = dt.datetime.now()
 
     # Initial setup
-    current_date = start.strftime("%Y-%m-%d")
+    current_date = get_current_date(start)
 
     # Create the end dates
     end_dates = generate_end_dates(5, current_date)[:-1]

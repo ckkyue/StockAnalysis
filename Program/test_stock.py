@@ -1,6 +1,6 @@
 # Imports
 import datetime as dt
-from helper_functions import generate_end_dates, stock_market, merge_stocks
+from helper_functions import get_current_date, generate_end_dates, stock_market, merge_stocks
 import pandas as pd
 from plot import *
 from stock_screener import EM_rating, stoploss_target
@@ -13,31 +13,30 @@ colors = plt.cm.tab10.colors
 start = dt.datetime.now()
 
 # Initial setup
-current_date = start.strftime("%Y-%m-%d")
+current_date = get_current_date(start)
 
 # Choose the stocks
-stocks = ["CORZ", "HBM", "PLTR", "PGR", "VRT", "1810.HK", "3690.HK", "3998.HK"]
+stocks = ["1810.HK", "3690.HK", "2618.HK"]
+for stock in stocks:
+    df = get_df(stock, current_date)
+    plot_close(stock, df, show=60, local_extrema=True, save=True)
 
 # # Iterate over stocks
-# for stock in stocks:\\\\\
+# for stock in stocks:
 #     df = get_df(stock, current_date)
 #     plot_close(stock, df, save=True)
 #     plot_MFI_RSI(stock, df, save=True)
 #     plot_stocks(["^GSPC", stock], current_date, save=True)
 
-# # Get the stop loss and target price of a stock
-# stock = "HBM"
-# df = get_df(stock, current_date)
-# current_close = df["Close"].iloc[-1]
-# stoploss, stoploss_pct, target, target_pct = stoploss_target(stock, 9.38, current_date)
-# print(f"Plan for {stock}.")
-# print(f"Current close: {round(current_close, 2)}.")
-# print(f"Stoploss: {stoploss}, {stoploss_pct} (%).")
-# print(f"Target price: {target}, {target_pct} (%).")
-
-stock = "9618.HK"
+# Get the stop loss and target price of a stock
+stock = "2618.HK"
 df = get_df(stock, current_date)
-plot_local_extrema(stock, df)
+current_close = df["Close"].iloc[-1]
+stoploss, stoploss_pct, target, target_pct = stoploss_target(stock, current_close, current_date)
+print(f"Plan for {stock}.")
+print(f"Current close: {round(current_close, 2)}.")
+print(f"Stoploss: {stoploss}, {stoploss_pct} (%).")
+print(f"Target price: {target}, {target_pct} (%).")
 
 compare_metal = False
 if compare_metal:

@@ -19,7 +19,8 @@ current_date = get_current_date(start)
 stocks = ["1810.HK", "3690.HK", "2618.HK"]
 for stock in stocks:
     df = get_df(stock, current_date)
-    plot_close(stock, df, show=60, local_extrema=True, save=True)
+    plot_close(stock, df, show=60, local_extrema=True)
+    plot_volatility(stock, df, 252)
 
 # # Iterate over stocks
 # for stock in stocks:

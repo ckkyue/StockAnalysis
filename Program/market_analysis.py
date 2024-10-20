@@ -101,26 +101,33 @@ def retracement_excel(excel_filename, end_date, min_column="Low", max_column="Hi
     for stock in stocks:
         data = get_df(stock, end_date)
         data = get_local_extrema(data, min_column=min_column, max_column=max_column, period=period)
+        data["Percent Change"] = data["Close"].pct_change()
+        data["Percent Change SMA 5"] = SMA(data, 5, "Percent Change")
+        SMA_5_slope = data["Percent Change SMA 5"].iloc[-1]
+        SMA_5_slopes.append(SMA_5_slope)
         local_min1, local_max, retracement = calculate_retracement(data, min_column=min_column, max_column=max_column, buffer=buffer)
         retracements.append(retracement)
-        data["SMA 5"] = SMA(data, 5)
-        SMA_5_slope = data["SMA 5"].diff().iloc[-1]
-        SMA_5_slopes.append(SMA_5_slope)
 
+    SMA_5_slopes = np.array(SMA_5_slopes)
+    SMA_5_slopes_zscore = stats.zscore(SMA_5_slopes)
     retracements = np.array(retracements)
     retracements_zscore = stats.zscore(retracements)
-    SMA_5_slopes = np.array(SMA_5_slopes)
 
-    # Overwrite or insert the SMA 5 slopes, retracement values, and z-scores
-    if "SMA 5 Slope" in df.columns:
-        df["SMA 5 Slope"] = SMA_5_slopes
+    # Overwrite or insert the SMA 5 slopes, retracement values, and their z-scores
+    if "SMA 5 Slope (%)" in df.columns:
+        df["SMA 5 Slope (%)"] = np.round(SMA_5_slopes * 100, 2)
     else:
-        df.insert(df.columns.get_loc("Close") + 1, "SMA 5 Slope", SMA_5_slopes)
+        df.insert(df.columns.get_loc("Close") + 1, "SMA 5 Slope (%)", np.round(SMA_5_slopes * 100, 2))
+
+    if "SMA 5 Slope Z-Score" in df.columns:
+        df["SMA 5 Slope Z-Score"] = np.round(SMA_5_slopes * 100, 2)
+    else:
+        df.insert(df.columns.get_loc("SMA 5 Slope (%)") + 1, "SMA 5 Slope Z-Score", SMA_5_slopes_zscore)
     
     if "Retracement (%)" in df.columns:
         df["Retracement (%)"] = np.round(retracements * 100, 2)
     else:
-        df.insert(df.columns.get_loc("SMA 5 Slope") + 1, "Retracement (%)", np.round(retracements * 100, 2))
+        df.insert(df.columns.get_loc("SMA 5 Slope (%)") + 1, "Retracement (%)", np.round(retracements * 100, 2))
 
     if "Retracement Z-Score" in df.columns:
         df["Retracement Z-Score"] = retracements_zscore

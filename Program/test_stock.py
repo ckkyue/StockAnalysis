@@ -32,7 +32,7 @@ for stock in stocks:
 stock = "2618.HK"
 df = get_df(stock, current_date)
 current_close = df["Close"].iloc[-1]
-stoploss, stoploss_pct, target, target_pct = stoploss_target(stock, current_close, current_date)
+stoploss, stoploss_pct, target, target_pct = stoploss_target(stock, current_close, "2024-10-21")
 print(f"Plan for {stock}.")
 print(f"Current close: {round(current_close, 2)}.")
 print(f"Stoploss: {stoploss}, {stoploss_pct} (%).")

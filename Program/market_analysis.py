@@ -90,8 +90,9 @@ def retracement_excel(excel_filename, end_date, min_column="Low", max_column="Hi
     # Read the screened stocks
     df = pd.read_excel(excel_filename)
 
-    # Initialize a list to store retracement values
+    # Initialize lists to store retracement values and SMA 5 slopes
     retracements = []
+    SMA_5_slopes = []
 
     # Get the list of stocks
     stocks = df["Stock"].tolist()
@@ -102,15 +103,24 @@ def retracement_excel(excel_filename, end_date, min_column="Low", max_column="Hi
         data = get_local_extrema(data, min_column=min_column, max_column=max_column, period=period)
         local_min1, local_max, retracement = calculate_retracement(data, min_column=min_column, max_column=max_column, buffer=buffer)
         retracements.append(retracement)
+        data["SMA 5"] = SMA(data, 5)
+        SMA_5_slope = data["SMA 5"].diff().iloc[-1]
+        SMA_5_slopes.append(SMA_5_slope)
 
     retracements = np.array(retracements)
     retracements_zscore = stats.zscore(retracements)
+    SMA_5_slopes = np.array(SMA_5_slopes)
 
-    # Overwrite or insert the retracement values and z-scores
+    # Overwrite or insert the SMA 5 slopes, retracement values, and z-scores
+    if "SMA 5 Slope" in df.columns:
+        df["SMA 5 Slope"] = SMA_5_slopes
+    else:
+        df.insert(df.columns.get_loc("Close") + 1, "SMA 5 Slope", SMA_5_slopes)
+    
     if "Retracement (%)" in df.columns:
         df["Retracement (%)"] = np.round(retracements * 100, 2)
     else:
-        df.insert(df.columns.get_loc("Close") + 1, "Retracement (%)", round(retracements * 100, 2))
+        df.insert(df.columns.get_loc("SMA 5 Slope") + 1, "Retracement (%)", np.round(retracements * 100, 2))
 
     if "Retracement Z-Score" in df.columns:
         df["Retracement Z-Score"] = retracements_zscore
@@ -230,9 +240,9 @@ def main():
     hkex_retracement = True
     if hkex_retracement:
         # Get the Excel filename
-        excel_filename = get_excel_filename("2024-10-19", "^HSI", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)
+        excel_filename = get_excel_filename(current_date, "^HSI", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)
 
-        retracement_excel(excel_filename, "2024-10-19")
+        retracement_excel(excel_filename, current_date)
 
     plot_marketbreadth = False
     if plot_marketbreadth:

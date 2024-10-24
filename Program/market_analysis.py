@@ -236,7 +236,7 @@ def main():
         # Plot the sectors of the selected stocks
         plot_sector_selected(current_date, "^GSPC", index_dict, NASDAQ_all=NASDAQ_all, save=True)
 
-    screen = False
+    screen = True
     if screen:
         # Get the Excel filename
         excel_filename = get_excel_filename(current_date, "^GSPC", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)
@@ -244,14 +244,14 @@ def main():
         # Screen the stocks from Excel file
         screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
     
-    hkex_retracement = True
+    hkex_retracement = False
     if hkex_retracement:
         # Get the Excel filename
         excel_filename = get_excel_filename(current_date, "^HSI", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)
 
         retracement_excel(excel_filename, current_date)
 
-    plot_marketbreadth = False
+    plot_marketbreadth = True
     if plot_marketbreadth:
         # Get the list of tickers of stock market
         index_df = get_df(index_name, current_date)
@@ -269,7 +269,7 @@ def main():
         plot_close(index_name, index_df, MVP_VCP=False)
         plot_MFI_RSI(index_name, index_df, save=True)
     
-    plot_vix = False
+    plot_vix = True
     if plot_vix:
         # Get the price data of CBOE Volatility Index (VIX)
         vix_df = get_df("^VIX", current_date)

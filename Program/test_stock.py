@@ -15,12 +15,12 @@ start = dt.datetime.now()
 # Initial setup
 current_date = get_current_date(start)
 
-# # Choose the stocks
-# stocks = ["1810.HK", "3690.HK", "2618.HK"]
-# for stock in stocks:
-#     df = get_df(stock, current_date)
-#     plot_close(stock, df, show=60, local_extrema=True)
-#     plot_volatility(stock, df, 252)
+# Choose the stocks
+stocks = ["1810.HK", "3690.HK", "2618.HK"]
+for stock in stocks:
+    df = get_df(stock, current_date)
+    plot_close(stock, df)
+    plot_volatility(stock, df, 252)
 
 # # Iterate over stocks
 # for stock in stocks:
@@ -29,15 +29,15 @@ current_date = get_current_date(start)
 #     plot_MFI_RSI(stock, df, save=True)
 #     plot_stocks(["^GSPC", stock], current_date, save=True)
 
-# Get the stop loss and target price of a stock
-stock = "CLS"
-df = get_df(stock, current_date)
-current_close = df["Close"].iloc[-1]
-stoploss, stoploss_pct, target, target_pct = stoploss_target(stock, 61.3, "2024-10-15")
-print(f"Plan for {stock}.")
-print(f"Current close: {round(current_close, 2)}.")
-print(f"Stoploss: {stoploss}, {stoploss_pct} (%).")
-print(f"Target price: {target}, {target_pct} (%).")
+# # Get the stop loss and target price of a stock
+# stock = "CLS"
+# df = get_df(stock, current_date)
+# current_close = df["Close"].iloc[-1]
+# stoploss, stoploss_pct, target, target_pct = stoploss_target(stock, 61.3, "2024-10-15")
+# print(f"Plan for {stock}.")
+# print(f"Current close: {round(current_close, 2)}.")
+# print(f"Stoploss: {stoploss}, {stoploss_pct} (%).")
+# print(f"Target price: {target}, {target_pct} (%).")
 
 compare_metal = False
 if compare_metal:

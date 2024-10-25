@@ -189,37 +189,39 @@ def main():
             # Visualize the closing price history of the ticker
             plot_close(ticker, df, MVP_VCP=False, save=True)
 
-    # Calculate the JdK RS-Ratio and Momentum
-    index_df = get_JdK(index_names + sectors, index_df, current_date)
+    sector_rotation = False
+    if sector_rotation:
+        # Calculate the JdK RS-Ratio and Momentum
+        index_df = get_JdK(index_names + sectors, index_df, current_date)
 
-    # Print the leading, weakening, improving and lagging sectors
-    sectors_leading = []
-    sectors_excel_leading = []
-    sectors_weakening = []
-    sectors_improving = []
-    sectors_excel_improving = []
-    sectors_lagging = []
+        # Print the leading, weakening, improving and lagging sectors
+        sectors_leading = []
+        sectors_excel_leading = []
+        sectors_weakening = []
+        sectors_improving = []
+        sectors_excel_improving = []
+        sectors_lagging = []
 
-    # Iterate over all sectors
-    for sector in sectors:
-        if index_df[f"{sector} JdK RS-Ratio"].iloc[-1] > 100:
-            if index_df[f"{sector} JdK RS-Momentum"].iloc[-1] > 100:
-                sectors_leading.append(sector_dict[sector])
-                sectors_excel_leading.append(sector_excel_dict[sector])
+        # Iterate over all sectors
+        for sector in sectors:
+            if index_df[f"{sector} JdK RS-Ratio"].iloc[-1] > 100:
+                if index_df[f"{sector} JdK RS-Momentum"].iloc[-1] > 100:
+                    sectors_leading.append(sector_dict[sector])
+                    sectors_excel_leading.append(sector_excel_dict[sector])
+                else:
+                    sectors_weakening.append(sector_dict[sector])
             else:
-                sectors_weakening.append(sector_dict[sector])
-        else:
-            if index_df[f"{sector} JdK RS-Momentum"].iloc[-1] > 100:
-                sectors_improving.append(sector_dict[sector])
-                sectors_excel_improving.append(sector_excel_dict[sector])
-            else:
-                sectors_lagging.append(sector_dict[sector])
+                if index_df[f"{sector} JdK RS-Momentum"].iloc[-1] > 100:
+                    sectors_improving.append(sector_dict[sector])
+                    sectors_excel_improving.append(sector_excel_dict[sector])
+                else:
+                    sectors_lagging.append(sector_dict[sector])
 
-    # Print the classified sectors
-    print(f"Leading sectors: {', '.join(sectors_leading)}")
-    print(f"Weakening sectors: {', '.join(sectors_weakening)}")
-    print(f"Improving sectors: {', '.join(sectors_improving)}")
-    print(f"Lagging sectors: {', '.join(sectors_lagging)}")
+        # Print the classified sectors
+        print(f"Leading sectors: {', '.join(sectors_leading)}")
+        print(f"Weakening sectors: {', '.join(sectors_weakening)}")
+        print(f"Improving sectors: {', '.join(sectors_improving)}")
+        print(f"Lagging sectors: {', '.join(sectors_lagging)}")
 
     plot_alljdk = False
     if plot_alljdk:
@@ -236,7 +238,7 @@ def main():
         # Plot the sectors of the selected stocks
         plot_sector_selected(current_date, "^GSPC", index_dict, NASDAQ_all=NASDAQ_all, save=True)
 
-    screen = True
+    screen = False
     if screen:
         # Get the Excel filename
         excel_filename = get_excel_filename(current_date, "^GSPC", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)
@@ -244,14 +246,14 @@ def main():
         # Screen the stocks from Excel file
         screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
     
-    hkex_retracement = False
+    hkex_retracement = True
     if hkex_retracement:
         # Get the Excel filename
         excel_filename = get_excel_filename(current_date, "^HSI", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)
 
         retracement_excel(excel_filename, current_date)
 
-    plot_marketbreadth = True
+    plot_marketbreadth = False
     if plot_marketbreadth:
         # Get the list of tickers of stock market
         index_df = get_df(index_name, current_date)
@@ -269,7 +271,7 @@ def main():
         plot_close(index_name, index_df, MVP_VCP=False)
         plot_MFI_RSI(index_name, index_df, save=True)
     
-    plot_vix = True
+    plot_vix = False
     if plot_vix:
         # Get the price data of CBOE Volatility Index (VIX)
         vix_df = get_df("^VIX", current_date)

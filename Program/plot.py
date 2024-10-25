@@ -202,15 +202,18 @@ def plot_bull_bear(stock, df, show=120, save=False):
     plt.show()
 
 # Plot the MFI/RSI indicator
-def plot_MFI_RSI(stock, df, show=252, save=False):
+def plot_MFI_RSI(stock, df, period, show=252, save=False):
     # Add technical indicators to the data
     add_indicator(df)
+
+    # Calculate the z-scores of MFI and RSI
+    df = calculate_ZScore(df, ["MFI", "RSI"], period)
 
     # Filter the data
     df = df[- show:]
 
-    # Create a figure with three subplots, one for the closing price, one for the MFI/RSI indicator, and one for the MFI Z-Score
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 8), gridspec_kw={"height_ratios": [5, 1]}, sharex=True)
+    # Create a figure with three subplots, one for the closing price, one for the MFI/RSI indicator, and one for the MFI/RSI Z-Score
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(8, 8), gridspec_kw={"height_ratios": [3, 1, 1]}, sharex=True)
 
     # Plot the closing price on the firsst subplot
     ax1.plot(df["Close"], label="Close")
@@ -229,6 +232,15 @@ def plot_MFI_RSI(stock, df, show=252, save=False):
 
     # Set the y label of the second subplot
     ax2.set_ylabel(f"MFI/RSI")
+
+    # Plot the MFI/RSI Z-Score on the third subplot
+    ax3.plot(df["MFI Z-Score"], label="MFI Z-Score", color="orange", alpha=0.7)
+    ax3.plot(df["RSI Z-Score"], label="RSI Z-Score", color="green", alpha=0.7)
+    ax3.axhline(y=2, linestyle="dotted", label="Oversold", color="red")
+    ax3.axhline(y=-2, linestyle="dotted", label="Overbought", color="red")
+
+    # Set the y label of the third subplot
+    ax3.set_ylabel(f"MFI/RSI Z-Score")
 
     # Set the x label
     plt.xlabel("Date")

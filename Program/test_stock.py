@@ -16,10 +16,10 @@ start = dt.datetime.now()
 current_date = get_current_date(start)
 
 # Choose the stocks
-stocks = ["APP", "CLS", "DUOL", "EGO", "HOOD", "POWL", "YOU"]
+stocks = ["DUOL", "EGO", "POWL"]
 for stock in stocks:
     df = get_df(stock, current_date)
-    plot_close(stock, df)
+    plot_close(stock, df, save=True)
     plot_volatility(stock, df, 252)
     plot_MFI_RSI(stock, df, 252)
     plot_stocks(["^GSPC", stock], current_date)

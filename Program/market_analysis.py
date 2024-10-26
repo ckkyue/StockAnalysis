@@ -189,7 +189,7 @@ def main():
             # Visualize the closing price history of the ticker
             plot_close(ticker, df, MVP_VCP=False, save=True)
 
-    sector_rotation = False
+    sector_rotation = True
     if sector_rotation:
         # Calculate the JdK RS-Ratio and Momentum
         index_df = get_JdK(index_names + sectors, index_df, current_date)
@@ -223,8 +223,8 @@ def main():
         print(f"Improving sectors: {', '.join(sectors_improving)}")
         print(f"Lagging sectors: {', '.join(sectors_lagging)}")
 
-    plot_alljdk = False
-    if plot_alljdk:
+    plot_all_jdk = False
+    if plot_all_jdk:
         # Iterate over all sectors
         for sector in sectors:
             # Plot the JdK RS-Ratio and Momentum of the sector
@@ -234,24 +234,30 @@ def main():
     if sector_selected:
         # Plot the relative rotation graph
         plot_rrg(sectors, sector_dict, index_df, "sector", save=True)
-
+        
         # Plot the sectors of the selected stocks
         plot_sector_selected(current_date, "^GSPC", index_dict, NASDAQ_all=NASDAQ_all, save=True)
+    
+    hkex_retracement = False
+    if hkex_retracement:
+        # Get the Excel filename
+        excel_filename = get_excel_filename(current_date, "^HSI", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)
 
-    screen = False
+        retracement_excel(excel_filename, current_date)
+
+    screen = True
     if screen:
         # Get the Excel filename
         excel_filename = get_excel_filename(current_date, "^GSPC", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)
 
         # Screen the stocks from Excel file
         screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
-    
-    hkex_retracement = True
-    if hkex_retracement:
+
         # Get the Excel filename
         excel_filename = get_excel_filename(current_date, "^HSI", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)
 
-        retracement_excel(excel_filename, current_date)
+        # Screen the stocks from Excel file
+        screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
 
     plot_marketbreadth = False
     if plot_marketbreadth:

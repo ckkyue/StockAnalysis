@@ -269,7 +269,7 @@ def main():
         # Visualize the closing price history and other technical indicators
         plot_market_breadth(index_name, index_df, tickers, save=True)
         plot_close(index_name, index_df, MVP_VCP=False)
-        plot_MFI_RSI(index_name, index_df, save=True)
+        plot_MFI_RSI(index_name, index_df, 252, save=True)
     
     plot_vix = False
     if plot_vix:

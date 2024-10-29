@@ -436,3 +436,24 @@ def get_JdK(sectors, index_df, end_date, period_short=12, period_long=26, period
         index_df = index_df.ffill()
 
     return index_df
+
+# Check buyable gap up
+def check_bgu(df):
+    # Get the current closing price
+    current_close = df["Close"].iloc[-1]
+    
+    # Calculate the 40 days ATR
+    df = ATR(df, period=40)
+    atr = df["ATR"].iloc[-1]
+
+    # Calculate the 50 days volume
+    df["Volume SMA 50"] = SMA(df, 50, column="Volume")
+    volume_sma50 = df["Volume SMA 50"].iloc[-1]
+
+    # Calculate the gap up price
+    price_bgu = current_close + 0.75 * atr
+
+    # Calculate the gap up volume
+    volume_bgu = 1.5 * volume_sma50
+
+    return np.array([price_bgu, volume_bgu])

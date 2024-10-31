@@ -21,9 +21,13 @@ def get_current_date(start):
     return current_date
 
 # Get the price data of a stock
-def get_df(stock, end_date, redownload=False):
+def get_df(stock, end_date, interval="1d", redownload=False):
     # Initial setup
-    csv_date = (dt.datetime.strptime(end_date, "%Y-%m-%d") - relativedelta(years=40)).strftime("%Y-%m-%d")
+    highf = interval in ["1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h"]
+    if highf:
+        csv_date = (dt.datetime.strptime(end_date, "%Y-%m-%d") - relativedelta(days=30)).strftime("%Y-%m-%d")
+    else:
+        csv_date = (dt.datetime.strptime(end_date, "%Y-%m-%d") - relativedelta(years=40)).strftime("%Y-%m-%d")
 
     # Define the folder path
     folder_path = "Price data"
@@ -52,7 +56,7 @@ def get_df(stock, end_date, redownload=False):
     
     # Save the price data to a .csv file if the most updated data do not exist
     if not os.path.isfile(filename) or redownload:
-        df = yf.download(stock, start=csv_date, end=end_date)
+        df = yf.download(stock, start=csv_date, end=end_date, interval=interval)
         if not df.empty:
             df.to_csv(filename)
             df = pd.read_csv(filename)
@@ -73,8 +77,13 @@ def get_df(stock, end_date, redownload=False):
     # Read the most updated data
     else:
         df = pd.read_csv(filename)
-    df["Date"] = pd.to_datetime(df["Date"])
-    df.set_index("Date", inplace=True)
+    
+    if highf:
+        df["Datetime"] = pd.to_datetime(df["Datetime"])
+        df.set_index("Datetime", inplace=True)
+    else:
+        df["Date"] = pd.to_datetime(df["Date"])
+        df.set_index("Date", inplace=True)
 
     return df
 

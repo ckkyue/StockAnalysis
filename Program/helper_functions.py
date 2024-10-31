@@ -23,9 +23,12 @@ def get_current_date(start):
 # Get the price data of a stock
 def get_df(stock, end_date, interval="1d", redownload=False):
     # Initial setup
-    highf = interval in ["1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h"]
-    if highf:
-        csv_date = (dt.datetime.strptime(end_date, "%Y-%m-%d") - relativedelta(days=30)).strftime("%Y-%m-%d")
+    if interval in ["60m", "1h"]:
+        csv_date = (dt.datetime.strptime(end_date, "%Y-%m-%d") - relativedelta(days=729)).strftime("%Y-%m-%d")
+    elif interval in ["2m", "5m", "15m", "30m", "90m"]:
+        csv_date = (dt.datetime.strptime(end_date, "%Y-%m-%d") - relativedelta(days=59)).strftime("%Y-%m-%d")
+    elif interval in ["1m"]:
+        csv_date = (dt.datetime.strptime(end_date, "%Y-%m-%d") - relativedelta(days=7)).strftime("%Y-%m-%d")
     else:
         csv_date = (dt.datetime.strptime(end_date, "%Y-%m-%d") - relativedelta(years=40)).strftime("%Y-%m-%d")
 
@@ -78,12 +81,12 @@ def get_df(stock, end_date, interval="1d", redownload=False):
     else:
         df = pd.read_csv(filename)
     
-    if highf:
-        df["Datetime"] = pd.to_datetime(df["Datetime"])
-        df.set_index("Datetime", inplace=True)
-    else:
+    if interval == "1d":
         df["Date"] = pd.to_datetime(df["Date"])
         df.set_index("Date", inplace=True)
+    else:
+        df["Datetime"] = pd.to_datetime(df["Datetime"], utc=True)
+        df.set_index("Datetime", inplace=True)
 
     return df
 

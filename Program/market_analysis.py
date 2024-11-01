@@ -189,7 +189,7 @@ def main():
             # Visualize the closing price history of the ticker
             plot_close(ticker, df, MVP_VCP=False, save=True)
 
-    sector_rotation = True
+    sector_rotation = False
     if sector_rotation:
         # Calculate the JdK RS-Ratio and Momentum
         index_df = get_JdK(index_names + sectors, index_df, current_date)
@@ -245,7 +245,7 @@ def main():
 
         retracement_excel(excel_filename, current_date)
 
-    screen = True
+    screen = False
     if screen:
         # Get the Excel filename
         excel_filename = get_excel_filename(current_date, "^GSPC", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)
@@ -259,7 +259,7 @@ def main():
         # Screen the stocks from Excel file
         screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
 
-    plot_marketbreadth = False
+    plot_marketbreadth = True
     if plot_marketbreadth:
         # Get the list of tickers of stock market
         index_df = get_df(index_name, current_date)

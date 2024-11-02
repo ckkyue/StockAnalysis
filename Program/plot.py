@@ -215,7 +215,7 @@ def plot_MFI_RSI(stock, df, period, show=252, save=False):
     # Create a figure with three subplots, one for the closing price, one for the MFI/RSI indicator, and one for the MFI/RSI Z-Score
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(8, 8), gridspec_kw={"height_ratios": [3, 1, 1]}, sharex=True)
 
-    # Plot the closing price on the firsst subplot
+    # Plot the closing price on the first subplot
     ax1.plot(df["Close"], label="Close")
 
     # Set the y label of the first subplot

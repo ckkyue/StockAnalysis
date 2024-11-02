@@ -48,7 +48,7 @@ def stoploss_target(stock, entry, end_date, period=5, max_stoploss=0.08, atr_buf
     return stoploss, stoploss_pct, target, target_pct
 
 # Create dataframes to store RS ratings and volume ranks
-def create_rs_volume_df(tickers, end_date, current_date, period, index_return, index_shortName, result_folder, infix, backtest):
+def create_rs_volume_df(tickers, end_date, current_date, period, index_return, index_shortName, result_folder, infix, backtest, print_multiple=True):
     # Find the return multiples and volumes
     # Initialize two empty dictionaries to store the return multiples and volume SMAs
     return_muls = {}
@@ -72,7 +72,8 @@ def create_rs_volume_df(tickers, end_date, current_date, period, index_return, i
             # Calculate the stock return relative to the market
             return_mul = round((stock_return / index_return), 2)
             return_muls[ticker] = return_mul
-            print(f"Ticker: {ticker} ; Return multiple against {index_shortName}: {return_mul}\n")
+            if print_multiple:
+                print(f"Ticker: {ticker} ; Return multiple against {index_shortName}: {return_mul}\n")
 
             # Calculate the moving averages of volume
             df["Volume SMA 5"] = SMA(df, 5, column="Volume")

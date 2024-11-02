@@ -47,6 +47,68 @@ def stoploss_target(stock, entry, end_date, period=5, max_stoploss=0.08, atr_buf
     
     return stoploss, stoploss_pct, target, target_pct
 
+# Create dataframes to store RS ratings and volume ranks
+def create_rs_volume_df(tickers, end_date, current_date, period, index_return, index_shortName, result_folder, infix, backtest):
+    # Find the return multiples and volumes
+    # Initialize two empty dictionaries to store the return multiples and volume SMAs
+    return_muls = {}
+    volume_smas = {}
+
+    # Iterate over all stocks
+    for ticker in tqdm(tickers):
+        try:
+            # Get the price data of the stock
+            df = get_df(ticker, current_date)
+
+            # Filter the data
+            df = df[df.index <= end_date]
+
+            # Calculate the percent change of the stock
+            df["Percent Change"] = df["Close"].pct_change()
+
+            # Calculate the stock return
+            stock_return = (df["Percent Change"] + 1).tail(period).cumprod().iloc[-1]
+
+            # Calculate the stock return relative to the market
+            return_mul = round((stock_return / index_return), 2)
+            return_muls[ticker] = return_mul
+            print(f"Ticker: {ticker} ; Return multiple against {index_shortName}: {return_mul}\n")
+
+            # Calculate the moving averages of volume
+            df["Volume SMA 5"] = SMA(df, 5, column="Volume")
+            df["Volume SMA 20"] = SMA(df, 20, column="Volume")
+            volume_smas[ticker] = {"Volume SMA 5": df["Volume SMA 5"].iloc[-1], "Volume SMA 20": df["Volume SMA 20"].iloc[-1]}
+
+        except Exception as e:
+            print(f"Error gathering data for {ticker}: {e}\n")
+            
+            continue
+        # time.sleep(0.05)
+
+    # Create a dataframe to store the RS ratings of tickers
+    return_muls = dict(sorted(return_muls.items(), key=lambda x: x[1], reverse=True))
+    rs_df = pd.DataFrame(return_muls.items(), columns=["Ticker", "Value"])
+    rs_df["RS"] = rs_df["Value"].rank(pct=True) * 100
+    rs_df = rs_df[["Ticker", "RS"]]
+
+    # Create a dataframe to store the volumes of tickers
+    volume_df = pd.DataFrame.from_dict(volume_smas, orient="index", columns=["Volume SMA 5", "Volume SMA 20"])
+    volume_df["Ticker"] = volume_df.index
+    volume_df.reset_index(drop=True, inplace=True)
+    volume_df["Volume SMA 5 Rank"] = volume_df["Volume SMA 5"].rank(ascending=False)
+    volume_df["Volume SMA 20 Rank"] = volume_df["Volume SMA 20"].rank(ascending=False)
+
+    # Merge the dataframes
+    rs_volume_df = pd.merge(rs_df, volume_df, on="Ticker")
+    rs_volume_df = rs_volume_df.sort_values(by="RS", ascending=False)
+
+    # Save the merged dataframe to a .csv file
+    filename = os.path.join(result_folder, f"{infix}rs_volume{end_date}.csv")
+    if not backtest:
+        rs_volume_df.to_csv(filename, index=False)
+
+    return rs_df, volume_df, rs_volume_df
+
 # Get the information of a stock from yfinance
 def get_stock_info(stock):
     try:
@@ -365,63 +427,8 @@ def select_stocks(end_dates, current_date, index_name, index_dict,
         print(f"Return for {index_shortName} between {index_df.index[-period].strftime('%Y-%m-%d')} and {end_date}: {index_return:.2f}")
 
         # Find the return multiples and volumes
-        # Initialize two empty dictionaries to store the return multiples and volume SMAs
-        return_muls = {}
-        volume_smas = {}
-
-        # Iterate over all stocks
-        for ticker in tqdm(tickers):
-            try:
-                # Get the price data of the stock
-                df = get_df(ticker, current_date)
-
-                # Filter the data
-                df = df[df.index <= end_date]
-
-                # Calculate the percent change of the stock
-                df["Percent Change"] = df["Close"].pct_change()
-
-                # Calculate the stock return
-                stock_return = (df["Percent Change"] + 1).tail(period).cumprod().iloc[-1]
-
-                # Calculate the stock return relative to the market
-                return_mul = round((stock_return / index_return), 2)
-                return_muls[ticker] = return_mul
-                print(f"Ticker: {ticker} ; Return multiple against {index_shortName}: {return_mul}\n")
-
-                # Calculate the moving averages of volume
-                df["Volume SMA 5"] = SMA(df, 5, column="Volume")
-                df["Volume SMA 20"] = SMA(df, 20, column="Volume")
-                volume_smas[ticker] = {"Volume SMA 5": df["Volume SMA 5"].iloc[-1], "Volume SMA 20": df["Volume SMA 20"].iloc[-1]}
-
-            except Exception as e:
-                print(f"Error gathering data for {ticker}: {e}\n")
-                
-                continue
-            # time.sleep(0.05)
-
-        # Create a dataframe to store the RS ratings of tickers
-        return_muls = dict(sorted(return_muls.items(), key=lambda x: x[1], reverse=True))
-        rs_df = pd.DataFrame(return_muls.items(), columns=["Ticker", "Value"])
-        rs_df["RS"] = rs_df["Value"].rank(pct=True) * 100
-        rs_df = rs_df[["Ticker", "RS"]]
-
-        # Create a dataframe to store the volumes of tickers
-        volume_df = pd.DataFrame.from_dict(volume_smas, orient="index", columns=["Volume SMA 5", "Volume SMA 20"])
-        volume_df["Ticker"] = volume_df.index
-        volume_df.reset_index(drop=True, inplace=True)
-        volume_df["Volume SMA 5 Rank"] = volume_df["Volume SMA 5"].rank(ascending=False)
-        volume_df["Volume SMA 20 Rank"] = volume_df["Volume SMA 20"].rank(ascending=False)
-
-        # Merge the dataframes
-        rs_volume_df = pd.merge(rs_df, volume_df, on="Ticker")
-        rs_volume_df = rs_volume_df.sort_values(by="RS", ascending=False)
-
-        # Save the merged dataframe to a .csv file
-        filename = os.path.join(result_folder, f"{infix}rs_volume.csv")
-        if not backtest:
-            rs_volume_df.to_csv(filename, index=False)
-
+        rs_df, volume_df, rs_volume_df = create_rs_volume_df(tickers, end_date, current_date, period, index_return, index_shortName, result_folder, infix, backtest)
+        
         # Filter the stocks
         if index_name == "^HSI":
             volume_df = volume_df[(volume_df["Volume SMA 5 Rank"] <= 200) | (volume_df["Volume SMA 20 Rank"] <= 200)]

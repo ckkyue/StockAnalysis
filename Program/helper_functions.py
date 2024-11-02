@@ -91,20 +91,38 @@ def get_df(stock, end_date, interval="1d", redownload=False):
     return df
 
 # Generate a list of end dates
-def generate_end_dates(years, current_date):
-    # Calculate the last end date
-    current = dt.datetime.strptime(current_date, "%Y-%m-%d")
-    this_month = current.month
-    last_end_date = current.replace(year=current.year, month=this_month, day=1).strftime("%Y-%m-%d")
+def generate_end_dates(years, current_date, index_name="^GSPC"):
+    try:
+        current = dt.datetime.strptime(current_date, "%Y-%m-%d")
+        # Calculate the target date
+        target_date = current - relativedelta(years=years)
 
-    # Get the price data of the index
-    df = get_df("^GSPC", current_date)
+        # Get the price data of the index
+        df = get_df(index_name, current_date)
 
-    # Retrieve the trading dates at 1-month intervals
-    last_end_date = dt.datetime.strptime(last_end_date, "%Y-%m-%d")
-    end_dates = [df.index[df.index <= last_end_date - relativedelta(months=i)].max().strftime("%Y-%m-%d") for i in range(years * 12 + this_month - 1, -1, -1)]
+        # Find the end dates
+        end_dates = []
+        current_date_int = target_date.replace(day=1)
 
-    return end_dates
+        while current_date_int <= current:
+            # Find the first date in the month in the price data
+            month_start = current_date_int
+            month_end = month_start + relativedelta(months=1, days=-1)
+            first_trading_date = df.loc[(df.index >= month_start) & (df.index <= month_end)].index.min()
+
+            if pd.isnull(first_trading_date):
+                print(f"Warning: No data found for {month_start.strftime('%Y-%m-%d')}.")
+            else:
+                end_dates.append(first_trading_date.strftime("%Y-%m-%d"))
+
+            current_date_int += relativedelta(months=1)
+
+        return end_dates
+
+    except (ValueError, KeyError) as e:
+        print(f"Error: {e}")
+        
+        return None
 
 # Get the earning dates of using yfinance
 def get_earning_dates(stock):

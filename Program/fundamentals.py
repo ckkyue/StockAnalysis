@@ -89,6 +89,7 @@ def fundamentals_csv(stock, end_date):
 
         try:
             base_url = response_revenue.url
+
         except AttributeError:
             base_url = None
             print(f"AttributeError: response_revenue = {response_revenue}")
@@ -135,12 +136,13 @@ def fundamentals_map(x):
     except ValueError:
         return "N/A"
 
-# Get the fundamentals data of a ticker
-def get_fundamentals(ticker, index_name, end_date, current_date, columns=["EPS past 5Y", "EPS this Y", "EPS Q/Q", "ROE"], columns_hsi=["trailingEps", "forwardEps", "earningsQuarterlyGrowth", "returnOnEquity"]):
+# Get the market cap of a ticker
+def get_market_cap(ticker, stock_info, end_date, current_date):
     try:
         # Get the earning dates
         earning_dates = get_earning_dates(ticker)
         earning_dates = earning_dates[earning_dates < current_date]
+
     except Exception as e:
         print(f"Error getting earnings dates {ticker}: {e}\n")
         earning_dates = None
@@ -151,26 +153,74 @@ def get_fundamentals(ticker, index_name, end_date, current_date, columns=["EPS p
     else:
         recent_earning_date = current_date
 
-    # Use yfinance for HKEX stocks to get the fundamentals data
-    if index_name == "^HSI":
-        info = yf.Ticker(ticker).info
-        tEPS = info.get(columns_hsi[0], "N/A")
-        fEPS = info.get(columns_hsi[1], "N/A")
-
-        # Calculate the estimated EPS growth of next year
-        EPS_nextY_growth = round((fEPS - tEPS) / np.abs(tEPS) * 100, 2) if tEPS != "N/A" else "N/A"
-
-        # Get the earnings growth of the most recent quarter
-        earnings_thisQ_growth = info[columns_hsi[2]] * 100
-
-        # Get the return on equity (ROE)
-        ROE = info[columns_hsi[3]] * 100
-
-        return EPS_nextY_growth, earnings_thisQ_growth, ROE
-    
-    # Handle non-HKEX stocks
     # Read the fundamentals data from .csv file if end date is earlier than recent earning date
-    elif end_date < recent_earning_date:
+    if end_date < recent_earning_date:
+        if earning_dates is not None:
+            # Get the earning dates
+            earning_dates = earning_dates[earning_dates < end_date]
+            
+            # Get the most recent report date
+            recent_report_date = earning_dates.max().strftime("%Y-%m-%d")
+
+        # Estimate the recent report date by shifting 3 months backwards from end date
+        else:
+            recent_report_date = (dt.datetime.strptime(end_date, "%Y-%m-%d") - relativedelta(months=3)).strftime("%Y-%m-%d")
+
+        # Define the csv date
+        csv_date = "2024-07-01"
+
+        # Read the fundamentals data from .csv file
+        df = fundamentals_csv(ticker, csv_date)
+
+        # Check if the dataframe is None
+        if df is not None:
+            # Filter the dates
+            dates = df.index[df.index <= recent_report_date]
+
+            # Generate the dates
+            closest_date = dates[0]
+
+            # Get the number of shares
+            shares = df.loc[closest_date, "shares-outstanding"] * 1e6
+
+            # Get the price data of the stock
+            df = get_df(ticker, end_date)
+
+            # Get the latest closing price
+            closest_close = df.loc[df.index[df.index <= closest_date].max(), "Close"]
+
+            # Calculate the market capitalization (market cap)
+            market_cap = round(shares * closest_close / 1e9, 2)
+        
+        else:
+            market_cap = "N/A"
+        
+    else:
+        market_cap = stock_info.get("marketCap", "N/A")
+        market_cap = round(market_cap / 1e9, 2) if market_cap != "N/A" else "N/A"
+
+    return market_cap
+
+# Get the fundamentals data of a ticker
+def get_fundamentals(ticker, end_date, current_date, columns=["EPS past 5Y", "EPS this Y", "EPS Q/Q", "ROE"]):
+    try:
+        # Get the earning dates
+        earning_dates = get_earning_dates(ticker)
+        earning_dates = earning_dates[earning_dates < current_date]
+
+    except Exception as e:
+        print(f"Error getting earnings dates {ticker}: {e}\n")
+        earning_dates = None
+
+    # Get the most recent earning date
+    if earning_dates is not None:
+        recent_earning_date = earning_dates.max().strftime("%Y-%m-%d")
+
+    else:
+        recent_earning_date = current_date
+    
+    # Read the fundamentals data from .csv file if end date is earlier than recent earning date
+    if end_date < recent_earning_date:
         if earning_dates is not None:
             # Get the earning dates
             earning_dates = earning_dates[earning_dates < end_date]
@@ -223,30 +273,17 @@ def get_fundamentals(ticker, index_name, end_date, current_date, columns=["EPS p
             # Get the ROE
             ROE = round(df.loc[closest_date, "roe"], 2)
 
-            # Get the number of shares
-            shares = df.loc[closest_date, "shares-outstanding"] * 1e6
-
-            # Get the price data of the stock
-            df = get_df(ticker, end_date)
-
-            # Get the latest closing price
-            closest_close = df.loc[df.index[df.index <= closest_date].max(), "Close"]
-
-            # Calculate the market capitalization (market cap)
-            market_cap = round(shares * closest_close / 1e9, 2)
-
         else:
-            market_cap, EPS_past5Y_growth, EPS_thisY_growth, EPS_QoQ_growth, ROE = "N/A", "N/A", "N/A", "N/A", "N/A"
+            EPS_past5Y_growth, EPS_thisY_growth, EPS_QoQ_growth, ROE = "N/A", "N/A", "N/A", "N/A"
 
     # Scrape the fundamentals data from Finviz if end date is later than recent earning date
-    elif end_date >= recent_earning_date:
-        market_cap = "N/A"
+    else:
         quote = Quote(ticker=ticker)
         fundamental_df = quote.fundamental_df.loc[:, columns].map(fundamentals_map)
         data = fundamental_df.values[0]
         EPS_past5Y_growth, EPS_thisY_growth, EPS_QoQ_growth, ROE = *data,
     
-    return market_cap, EPS_past5Y_growth, EPS_thisY_growth, EPS_QoQ_growth, ROE
+    return EPS_past5Y_growth, EPS_thisY_growth, EPS_QoQ_growth, ROE
 
 # Get the quarterly growths of a ticker
 def get_lastQ_growths(ticker, index_name, end_date, current_date):
@@ -309,32 +346,3 @@ def get_lastQ_growths(ticker, index_name, end_date, current_date):
             EPS_thisQ_growth, EPS_last1Q_growth, EPS_last2Q_growth = "N/A", "N/A", "N/A"
 
     return EPS_thisQ_growth, EPS_last1Q_growth, EPS_last2Q_growth
-  
-# Main function
-def main():
-    # Start of the program
-    start = dt.datetime.now()
-    print(f"Start of the program: {start}")
-
-    # Define the folder path
-    folder_path = "Fundamentals"
-
-    # Check if the folder exists, create it if it does not
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
-        
-    # Choose the stocks
-    stocks = ["AAPL", "NVDA"]
-
-    # Get the fundamentals of the stocks 
-    for stock in tqdm(stocks):
-        df = fundamentals_csv(stock, "2024-07-01")
-        print(df)
-
-    # End of the program
-    end = dt.datetime.now()
-    print(f"End of the program: {end}")
-
-# Run the main function
-if __name__ == "__main__":
-    main()

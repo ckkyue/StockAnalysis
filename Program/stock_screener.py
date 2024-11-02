@@ -47,39 +47,59 @@ def stoploss_target(stock, entry, end_date, period=5, max_stoploss=0.08, atr_buf
     
     return stoploss, stoploss_pct, target, target_pct
 
-# Get the data of a stock
-def get_stock_data(stock, end_date, current_date):
-    try:
-        # Read the price data of the stock
-        df = pd.read_csv(f"Price data/{stock}_{current_date}.csv", index_col=0)
-
-        # Filter the data
-        df = df[df.index <= end_date]
-
-        # Calculate the moving averages
-        periods = [5, 20, 50, 200]
-
-        try:
-            for i in periods:
-                df[f"SMA {str(i)}"] = SMA(df, i)
-        except Exception:
-            for i in periods:
-                df[f"EMA {str(i)}"] = EMA(df, i)
-
-        return df
-    except Exception as e:
-        print((f"Error for get_stock_data {stock}: {e}\n"))
-
-        return None
-
 # Get the information of a stock from yfinance
 def get_stock_info(stock):
     try:
         return yf.Ticker(stock).info
+    
     except Exception as e:
         print((f"Error for get_stock_info {stock}: {e}\n"))
 
         return None
+    
+# Define a function to choose between SMA and EMA
+def EMA_replace(SMA_value, EMA_value):
+    return EMA_value if np.isnan(SMA_value) else SMA_value
+
+# Check if the price data fulfills the technical conditions
+def check_conds_tech(index_name, current_close, SMA_20, SMA_20_slope, SMA_50, SMA_50_slope, SMA_200, SMA_200_slope, EMA_20, EMA_20_slope, EMA_50, EMA_50_slope, EMA_200, EMA_200_slope, Low, High):
+    # Technicals
+    if index_name == "^HSI":
+        cond_t1 = current_close > EMA_replace(SMA_20, EMA_20) > EMA_replace(SMA_50, EMA_50)
+        cond_t2 = current_close > EMA_replace(SMA_200, EMA_200)
+        cond_t3 = EMA_replace(SMA_20_slope, EMA_20_slope) > 0
+        conds_tech = cond_t1 and cond_t2 and cond_t3
+        
+        return conds_tech, cond_t1, cond_t2, cond_t3
+
+    else:
+        cond_t1 = current_close > EMA_replace(SMA_50, EMA_50) > EMA_replace(SMA_200, EMA_200)
+        cond_t2 = EMA_replace(SMA_50_slope, EMA_50_slope) > 0
+        cond_t3 = EMA_replace(SMA_200_slope, EMA_200_slope) > 0
+        cond_t4 = current_close >= (1.25 * Low)
+        cond_t5 = current_close >= (0.75 * High)
+        conds_tech = cond_t1 and cond_t2 and cond_t3 and cond_t4 and cond_t5
+
+        return conds_tech, cond_t1, cond_t2, cond_t3, cond_t4, cond_t5
+    
+# Check if the stock fulfills the fundamental conditions
+def check_conds_fund(Y_growth, Q_growth, ROE):
+    try:
+        cond_f2 = Y_growth >= 0
+    except Exception:
+        cond_f2 = False
+    try:
+        cond_f3 = Q_growth >= 0
+    except Exception:
+        cond_f3 = False
+    try:
+        cond_f4 = ROE >= 0
+    except Exception:
+        cond_f4 = False
+    
+    conds_fund = cond_f2 and cond_f3 and cond_f4
+
+    return conds_fund, cond_f2, cond_f3, cond_f4
 
 # Check the Minervini conditions for the top performing stocks
 def process_stock(stock, index_name, end_date, current_date, stock_data, stock_info_data, rs_volume_df, backtest=False):
@@ -92,26 +112,34 @@ def process_stock(stock, index_name, end_date, current_date, stock_data, stock_i
         stock_info = stock_info_data[stock]
 
         # Preprocess stock data
+        # Filter the data
+        df = df[df.index <= end_date]
+
         # Current closing price
         current_close = df["Close"].iloc[-1]
 
         # Calculate the moving averages
-        try:
-            SMA_5 = df["SMA 5"].iloc[-1]
-            SMA_20 = df["SMA 20"].iloc[-1]
-            SMA_50 = df["SMA 50"].iloc[-1]
-            SMA_200 = df["SMA 200"].iloc[-1]
-            SMA_20_slope = df["SMA 20"].diff().iloc[-1]
-            SMA_50_slope = df["SMA 50"].rolling(window=5).apply(slope_reg).iloc[-1]
-            SMA_200_slope = df["SMA 200"].rolling(window=5).apply(slope_reg).iloc[-1]
-        except Exception:
-            EMA_5 = df["EMA 5"].iloc[-1]
-            EMA_20 = df["EMA 20"].iloc[-1]
-            EMA_50 = df["EMA 50"].iloc[-1]
-            EMA_200 = df["EMA 200"].iloc[-1]
-            EMA_20_slope = df["SMA 20"].diff().iloc[-1]
-            EMA_50_slope = df["EMA 50"].rolling(window=5).apply(slope_reg).iloc[-1]
-            EMA_200_slope = df["EMA 200"].rolling(window=5).apply(slope_reg).iloc[-1]
+        periods = [5, 20, 50, 200]
+
+        for i in periods:
+            df[f"SMA {str(i)}"] = SMA(df, i)
+            df[f"EMA {str(i)}"] = EMA(df, i)
+
+        # Calculate the moving averages
+        SMA_5 = df["SMA 5"].iloc[-1]
+        SMA_20 = df["SMA 20"].iloc[-1]
+        SMA_50 = df["SMA 50"].iloc[-1]
+        SMA_200 = df["SMA 200"].iloc[-1]
+        SMA_20_slope = df["SMA 20"].diff().iloc[-1]
+        SMA_50_slope = df["SMA 50"].diff().iloc[-1]
+        SMA_200_slope = df["SMA 200"].diff().iloc[-1]
+        EMA_5 = df["EMA 5"].iloc[-1]
+        EMA_20 = df["EMA 20"].iloc[-1]
+        EMA_50 = df["EMA 50"].iloc[-1]
+        EMA_200 = df["EMA 200"].iloc[-1]
+        EMA_20_slope = df["EMA 20"].diff().iloc[-1]
+        EMA_50_slope = df["EMA 50"].diff().iloc[-1]
+        EMA_200_slope = df["EMA 200"].diff().iloc[-1]
 
         # 52 week Low
         Low = round(min(df["Low"][-252:]), 2)
@@ -125,93 +153,46 @@ def process_stock(stock, index_name, end_date, current_date, stock_data, stock_i
         # Check the Minervini conditions
         # Technicals
         if index_name == "^HSI":
-            try:
-                cond_t1 = current_close > SMA_20 > SMA_50
-            except Exception:
-                cond_t1 = current_close > EMA_20 > EMA_50
-            try:
-                cond_t2 = current_close > SMA_200
-            except Exception:
-                cond_t2 = current_close > EMA_200
-            try:
-                cond_t3 = SMA_20_slope > 0
-            except Exception:
-                cond_t3 = EMA_20_slope > 0
-            conds_tech = cond_t1 and cond_t2 and cond_t3
+            conds_tech, cond_t1, cond_t2, cond_t3 = check_conds_tech(index_name, current_close, SMA_20, SMA_20_slope, SMA_50, SMA_50_slope, SMA_200, SMA_200_slope, EMA_20, EMA_20_slope, EMA_50, EMA_50_slope, EMA_200, EMA_200_slope, Low, High)
         else:
-            try:
-                cond_t1 = current_close > SMA_50 > SMA_200
-            except Exception:
-                cond_t1 = current_close > EMA_50 > EMA_200
-            try:
-                cond_t2 = SMA_50_slope > 0
-            except Exception:
-                cond_t2 = EMA_50_slope > 0
-            try:
-                cond_t3 = SMA_200_slope > 0
-            except Exception:
-                cond_t3 = EMA_200_slope > 0
-            cond_t4 = current_close >= (1.25 * Low)
-            cond_t5 = current_close >= (0.75 * High)
-            conds_tech = cond_t1 and cond_t2 and cond_t3 and cond_t4 and cond_t5
+            conds_tech, cond_t1, cond_t2, cond_t3, cond_t4, cond_t5 = check_conds_tech(index_name, current_close, SMA_20, SMA_20_slope, SMA_50, SMA_50_slope, SMA_200, SMA_200_slope, EMA_20, EMA_20_slope, EMA_50, EMA_50_slope, EMA_200, EMA_200_slope, Low, High)
 
         # Preprocess stock information
         if conds_tech:
-            if not backtest:
-                market_cap = stock_info.get("marketCap", "N/A")
-                market_cap = round(market_cap / 1e9, 2) if market_cap != "N/A" else "N/A"
-                tEPS = stock_info.get("trailingEps", "N/A")
-                fEPS = stock_info.get("forwardEps", "N/A")
-                
-                # Estimate the EPS growth of next year
-                EPS_nextY_growth = round((fEPS - tEPS) / np.abs(tEPS) * 100, 2) if tEPS != "N/A" else "N/A"
-
-            elif backtest:
-                market_cap, EPS_past5Y_growth, EPS_thisY_growth, EPS_QoQ_growth, ROE = get_fundamentals(stock, index_name, end_date, current_date)
-
-            sector = stock_info.get("sector", "N/A")
-            industry = stock_info.get("industry", "N/A")
+            market_cap = get_market_cap(stock, stock_info, end_date, current_date)
 
             # Fundamentals
             cond_f1 = market_cap != "N/A" and market_cap > 1
 
             # Check if the conditions are met
-            conds = conds_tech and cond_f1
-            if conds:
-                if not backtest:
-                    if index_name == "^HSI":
-                        EPS_nextY_growth, earnings_thisQ_growth, ROE = get_fundamentals(stock, index_name, end_date, current_date)
-                    else:
-                        _, EPS_past5Y_growth, EPS_thisY_growth, EPS_QoQ_growth, ROE = get_fundamentals(stock, index_name, end_date, current_date)
+            if conds_tech and cond_f1:
+                # Get the trailing and forward EPS
+                tEPS = stock_info.get("trailingEps", "N/A")
+                fEPS = stock_info.get("forwardEps", "N/A")
+
+                # Estimate the EPS growth of next year
+                EPS_nextY_growth = round((fEPS - tEPS) / np.abs(tEPS) * 100, 2) if tEPS != "N/A" else "N/A"
+                
+                if index_name == "^HSI":
+                    # Get the earnings growth of the most recent quarters
+                    earnings_thisQ_growth = stock_info["earningsQuarterlyGrowth"] * 100
+
+                    # Get the ROE
+                    ROE = stock_info["returnOnEquity"] * 100
+
+                else:
+                    EPS_past5Y_growth, EPS_thisY_growth, EPS_QoQ_growth, ROE = get_fundamentals(stock, end_date, current_date)
 
                 if index_name == "^HSI":
-                    try:
-                        cond_f2 = EPS_nextY_growth >= 0
-                    except Exception:
-                        cond_f2 = False
-                    try:
-                        cond_f3 = earnings_thisQ_growth >= 0
-                    except Exception:
-                        cond_f3 = False
-                    try:
-                        cond_f4 = ROE >= 0
-                    except Exception:
-                        cond_f4 = False
+                    conds_fund, cond_f2, cond_f3, cond_f4 = check_conds_fund(EPS_nextY_growth, earnings_thisQ_growth, ROE)
                 else:
-                    try:
-                        cond_f2 = EPS_thisY_growth >= 0
-                    except Exception:
-                        cond_f2 = False
-                    try:
-                        cond_f3 = EPS_QoQ_growth >= 10
-                    except Exception:
-                        cond_f3 = False
-                    try:
-                        cond_f4 = ROE >= 0
-                    except Exception:
-                        cond_f4 = False
+                    conds_fund, cond_f2, cond_f3, cond_f4 = check_conds_fund(EPS_thisY_growth, EPS_QoQ_growth, ROE)
                 
-                if cond_f2 and cond_f3 and cond_f4:
+                if conds_fund:
+                    # Get the sector and industry of the stock
+                    sector = stock_info.get("sector", "N/A")
+                    industry = stock_info.get("industry", "N/A")
+
                     # Get the quarterly growths of the stock
                     EPS_thisQ_growth, EPS_last1Q_growth, EPS_last2Q_growth = get_lastQ_growths(stock, index_name, end_date, current_date)
 
@@ -219,7 +200,7 @@ def process_stock(stock, index_name, end_date, current_date, stock_data, stock_i
                     data = get_volatility(df)
                     volatility_20 = data["Volatility 20"].iloc[-1]
                     volatility_60 = data["Volatility 60"].iloc[-1]
-
+                    
                     # MVP/VCP condition
                     data = MVP_VCP(df)
                     MVP = data["MVP"].iloc[-1]
@@ -236,6 +217,7 @@ def process_stock(stock, index_name, end_date, current_date, stock_data, stock_i
                     try:
                         earning_dates = get_earning_dates(stock)
                         next_earning_date = str(earning_dates[earning_dates > end_date].min())
+
                     except Exception as e:
                         print(f"Error getting next earning date {stock}: {e}\n")
                         next_earning_date = "N/A"
@@ -248,12 +230,12 @@ def process_stock(stock, index_name, end_date, current_date, stock_data, stock_i
                         "Close": round(current_close, 2),
                         "Volatility 20 (%)": round(volatility_20 * 100, 2),
                         "Volatility 60 (%)": round(volatility_60 * 100, 2),
-                        "MA 5": SMA_5 if SMA_5 is not None else EMA_5,
-                        "MA 20": SMA_20 if SMA_20 is not None else EMA_20,
-                        "MA 50": SMA_50 if SMA_50 is not None else EMA_50,
-                        "MA 200": SMA_200 if SMA_200 is not None else EMA_200,
-                        "MA 5/20 Ratio": round(SMA_5 / SMA_20, 2) if SMA_5 is not None and SMA_20 is not None else round(EMA_5 / EMA_20, 2),
-                        "MA 5/50 Ratio": round(SMA_5 / SMA_50, 2) if SMA_5 is not None and SMA_50 is not None else round(EMA_5 / EMA_50, 2),
+                        "SMA 5": EMA_replace(SMA_5, EMA_5),
+                        "SMA 20": EMA_replace(SMA_20, EMA_20),
+                        "SMA 50": EMA_replace(SMA_50, EMA_50),
+                        "SMA 200": EMA_replace(SMA_200, EMA_200),
+                        "SMA 5/20 Ratio": round(SMA_5 / SMA_20, 2),
+                        "SMA 5/50 Ratio": round(SMA_5 / SMA_50, 2),
                         "MVP": MVP,
                         "M past 60": M_past60,
                         "MV past 60": MV_past60,
@@ -283,12 +265,14 @@ def process_stock(stock, index_name, end_date, current_date, stock_data, stock_i
                             "Forward EPS": fEPS,
                             "Estimated EPS growth (%)": EPS_nextY_growth,
                         })
+
                     if index_name == "^HSI":
                         result.update({
                             "Earnings this Q (%)": earnings_thisQ_growth,
                         })
 
                     return result
+                
     except Exception as e:
         print(f"Error for {stock}: {e}\n")
 
@@ -448,7 +432,7 @@ def select_stocks(end_dates, current_date, index_name, index_dict,
 
         # Fetch the stock data and stock information in parallel
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            stock_data = {stock: data for stock, data in zip(stocks, executor.map(lambda stock: get_stock_data(stock, end_date, current_date), stocks))}
+            stock_data = {stock: data for stock, data in zip(stocks, executor.map(lambda stock: get_df(stock, end_date), stocks))}
             stock_info_data = {stock: info for stock, info in zip(stocks, executor.map(get_stock_info, stocks))}
 
         # Process each stock and create an export list
@@ -554,7 +538,7 @@ def main():
     end_dates = [current_date]
     
     # Variables
-    NASDAQ_all = True
+    NASDAQ_all = False
     period_hk = 60 # Period for HK stocks
     period_us = 252 # Period for US stocks
     RS = 90

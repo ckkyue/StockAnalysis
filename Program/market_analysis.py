@@ -189,7 +189,7 @@ def main():
             # Visualize the closing price history of the ticker
             plot_close(ticker, df, MVP_VCP=False, save=True)
 
-    sector_rotation = False
+    sector_rotation = True
     if sector_rotation:
         # Calculate the JdK RS-Ratio and Momentum
         index_df = get_JdK(index_names + sectors, index_df, current_date)
@@ -277,18 +277,22 @@ def main():
         plot_close(index_name, index_df, MVP_VCP=False)
         plot_MFI_RSI(index_name, index_df, 252, save=True)
     
-    plot_vix = False
+    plot_vix = True
     if plot_vix:
         # Get the price data of CBOE Volatility Index (VIX)
         vix_df = get_df("^VIX", current_date)
 
-        # Get the current closing price of VIX
+        # Get the current high of VIX
         vix_current_high = round(vix_df["High"].iloc[-1], 2)
 
+        # Calculate SMA 5
+        vix_df["SMA 5"] = SMA(vix_df, 5)
+        vix_sma5 = vix_df["SMA 5"].iloc[-1]
+
         # Define the exit indicator based on VIX value
-        if vix_current_high < 26:
+        if vix_current_high < 26 and vix_sma5 <= 0:
             vix_colour = "Green"
-        elif 26 < vix_current_high < 30:
+        elif 26 < vix_current_high < 30 or vix_sma5 > 0:
             vix_colour = "Yellow"
         elif vix_current_high > 30:
             vix_colour = "Red"

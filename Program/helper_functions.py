@@ -89,9 +89,9 @@ def get_df(stock, end_date, interval="1d", redownload=False):
         df.set_index("Datetime", inplace=True)
 
     return df
-
+    
 # Generate a list of end dates
-def generate_end_dates(years, current_date, index_name="^GSPC"):
+def generate_end_dates(years, current_date, interval="1m", index_name="^GSPC"):
     try:
         current = dt.datetime.strptime(current_date, "%Y-%m-%d")
         # Calculate the target date
@@ -102,26 +102,35 @@ def generate_end_dates(years, current_date, index_name="^GSPC"):
 
         # Find the end dates
         end_dates = []
-        current_date_int = target_date.replace(day=1)
+        current_date_int = target_date
+
+        if interval == "1m":
+            increment = relativedelta(months=1)
+        elif interval == "1w":
+            increment = relativedelta(weeks=1)
 
         while current_date_int <= current:
-            # Find the first date in the month in the price data
-            month_start = current_date_int
-            month_end = month_start + relativedelta(months=1, days=-1)
-            first_trading_date = df.loc[(df.index >= month_start) & (df.index <= month_end)].index.min()
+            if interval == "1m":
+                # Find the first trading date in the month
+                month_start = current_date_int.replace(day=1)
+                month_end = month_start + relativedelta(months=1, days=-1)
+                first_trading_date = df.loc[(df.index >= month_start) & (df.index <= month_end)].index.min()
+            else:
+                week_start = current_date_int
+                week_end = week_start + relativedelta(weeks=1, days=-1)
+                first_trading_date = df.loc[(df.index >= week_start) & (df.index <= week_end)].index.min()
 
             if pd.isnull(first_trading_date):
-                print(f"Warning: No data found for {month_start.strftime('%Y-%m-%d')}.")
+                print(f"Warning: No data found for {week_start.strftime('%Y-%m-%d')} to {week_end.strftime('%Y-%m-%d')}.")
             else:
                 end_dates.append(first_trading_date.strftime("%Y-%m-%d"))
 
-            current_date_int += relativedelta(months=1)
+            current_date_int += increment
 
         return end_dates
 
     except (ValueError, KeyError) as e:
         print(f"Error: {e}")
-        
         return None
 
 # Get the earning dates of using yfinance

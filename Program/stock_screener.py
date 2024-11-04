@@ -49,6 +49,14 @@ def stoploss_target(stock, entry, end_date, period=5, max_stoploss=0.08, atr_buf
 
 # Create dataframes to store RS ratings and volume ranks
 def create_rs_volume_df(tickers, current_date, end_dates, periods, index_returns, index_shortName, result_folder, infix, backtest, print_multiple=True):
+    # Convert inputs to lists
+    if not isinstance(end_dates, list):
+        end_dates = [end_dates]
+    if not isinstance(periods, list):
+        periods = [periods]
+    if not isinstance(index_returns, list):
+        index_returns = [index_returns]
+
     # Initialize three empty lists to store rs_df, volume_df, and rs_volume_df
     rs_dfs = []
     volume_dfs = []
@@ -123,7 +131,10 @@ def create_rs_volume_df(tickers, current_date, end_dates, periods, index_returns
         volume_dfs.append(volume_df)
         rs_volume_dfs.append(rs_volume_df)
 
-    return rs_dfs, volume_dfs, rs_volume_dfs
+    if len(rs_dfs) == 1:
+        return rs_dfs[0], volume_dfs[0], rs_volume_dfs[0]
+    else:
+        return rs_dfs, volume_dfs, rs_volume_dfs
 
 # Get the information of a stock from yfinance
 def get_stock_info(stock):

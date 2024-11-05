@@ -759,9 +759,6 @@ def main():
     # Start of the program
     start = dt.datetime.now()
 
-    # Initial setup
-    current_date = get_current_date(start)
-
     # Define the paths for the folders
     folders = ["Result/Figure", "Result/Stock dict"]
 
@@ -769,10 +766,6 @@ def main():
     for folder in folders:
         if not os.path.exists(folder):
             os.makedirs(folder)
-
-    # Create the end dates
-    end_dates = generate_end_dates(5, current_date)
-    end_dates.append(current_date)
 
     # Variables
     NASDAQ_all = True
@@ -784,6 +777,13 @@ def main():
 
     # Get the infix
     infix = get_infix(index_name, index_dict, NASDAQ_all)
+
+    # Get the current date
+    current_date = get_current_date(start, index_name)
+
+    # Create the end dates
+    end_dates = generate_end_dates(5, current_date)
+    end_dates.append(current_date)
 
     # Create a group of factors
     factors_group = []

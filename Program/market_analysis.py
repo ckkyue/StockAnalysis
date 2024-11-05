@@ -145,9 +145,6 @@ def main():
     # Start of the program
     start = dt.datetime.now()
 
-    # Initial setup
-    current_date = get_current_date(start)
-
    # Variables
     NASDAQ_all = True
     period_hk = 60 # Period for HK stocks
@@ -175,6 +172,9 @@ def main():
     
     # Define the result folder
     result_folder = "Result"
+
+    # Get the current date
+    current_date = get_current_date(start, index_name)
     
     # Get the price data of the index
     index_df = get_df(index_name, current_date)

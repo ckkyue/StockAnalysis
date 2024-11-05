@@ -10,13 +10,16 @@ from yahoo_fin import stock_info as si
 import yfinance as yf
 
 # Get the current date
-def get_current_date(start):
+def get_current_date(start, index_name):
     # Check if today is Sunday
     if start.weekday() == 6:
         # Revert back one day
         current_date = (start - dt.timedelta(days=1)).strftime("%Y-%m-%d")
     else:
-        current_date = start.strftime("%Y-%m-%d")
+        if index_name == "^HSI":
+            current_date = (start + dt.timedelta(days=1)).strftime("%Y-%m-%d")
+        else:
+            current_date = start.strftime("%Y-%m-%d")
     
     return current_date
 

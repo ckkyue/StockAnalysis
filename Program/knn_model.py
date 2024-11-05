@@ -125,13 +125,6 @@ def main():
     # Start of the program
     start = dt.datetime.now()
 
-    # Initial setup
-    current_date = get_current_date(start)
-
-    # Create the end dates
-    end_dates = generate_end_dates(5, current_date)[:-1]
-    end_dates.append("2024-07-10")
-
     # Variables
     NASDAQ_all = True
     factors = [0.05, 0.95, 0.0]
@@ -142,6 +135,13 @@ def main():
 
     # Get the infix
     infix = get_infix(index_name, index_dict, NASDAQ_all)
+
+    # Get the current date
+    current_date = get_current_date(start, index_name)
+
+    # Create the end dates
+    end_dates = generate_end_dates(5, current_date)[:-1]
+    end_dates.append("2024-07-10")
 
     # Create a group of factors
     factors_group = []

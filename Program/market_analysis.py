@@ -230,13 +230,13 @@ def main():
             # Plot the JdK RS-Ratio and Momentum of the sector
             plot_JdK(sector, sector_dict, index_df, save=True)
 
-    sector_selected = False
+    sector_selected = True
     if sector_selected:
         # Plot the relative rotation graph
         plot_rrg(sectors, sector_dict, index_df, "sector", save=True)
         
-        # Plot the sectors of the selected stocks
-        plot_sector_selected(current_date, "^GSPC", index_dict, NASDAQ_all=NASDAQ_all, save=True)
+        # # Plot the sectors of the selected stocks
+        # plot_sector_selected(current_date, "^GSPC", index_dict, NASDAQ_all=NASDAQ_all, save=True)
     
     hkex_retracement = False
     if hkex_retracement:
@@ -259,7 +259,7 @@ def main():
         # Screen the stocks from Excel file
         screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
 
-    plot_marketbreadth = True
+    plot_marketbreadth = False
     if plot_marketbreadth:
         # Get the list of tickers of stock market
         index_df = get_df(index_name, current_date)

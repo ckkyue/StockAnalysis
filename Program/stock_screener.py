@@ -89,10 +89,10 @@ def create_rs_volume_df(tickers, current_date, end_dates, periods, index_returns
                 stock_return = (df["Percent Change"] + 1).tail(period).cumprod().iloc[-1]
 
                 # Calculate the stock return relative to the market
-                return_mul = round((stock_return / index_return), 2)
+                return_mul = stock_return / index_return
                 return_muls[ticker] = return_mul
                 if print_multiple:
-                    print(f"Ticker: {ticker} ; Return multiple against {index_shortName}: {return_mul}\n")
+                    print(f"Ticker: {ticker} ; Return multiple against {index_shortName}: {round(return_mul, 2)}\n")
                 
                 # Calculate the moving averages of volume
                 df["Volume SMA 5"] = SMA(df, 5, column="Volume")
@@ -122,8 +122,29 @@ def create_rs_volume_df(tickers, current_date, end_dates, periods, index_returns
         rs_volume_df = pd.merge(rs_df, volume_df, on="Ticker")
         rs_volume_df = rs_volume_df.sort_values(by="RS", ascending=False)
 
+        # Check if there are pre-existing data
+        current_files = [file for file in os.listdir(result_folder) if file.startswith(f"{infix}rsvolume_")]
+
+        # Get the list of dates
+        dates = [file.split("_")[-1].replace(".csv", "") for file in current_files]
+
+        # Get the maximum date from the list of dates
+        max_date = max(dates) if dates else "N/A"
+
+        # Remove the old files for dates prior to the maximum date
+        if max_date != "N/A":
+            for date in dates:
+                if date < max_date:
+                    os.remove(os.path.join(result_folder, f"{infix}rsvolume_{date}.csv"))
+            # Define the filename
+            if end_date >= max_date:
+                filename = os.path.join(result_folder, f"{infix}rsvolume_{end_date}.csv")
+            else:
+                filename = os.path.join(result_folder, f"{infix}rsvolume_{max_date}.csv")
+        else:
+            filename = os.path.join(result_folder, f"{infix}rsvolume_{end_date}.csv")
+
         # Save the merged dataframe to a .csv file
-        filename = os.path.join(result_folder, f"{infix}rs_volume{end_date}.csv")
         if not backtest:
             rs_volume_df.to_csv(filename, index=False)
 
@@ -575,7 +596,7 @@ def main():
     index_name = "^GSPC"
     index_dict = {"^HSI": "HKEX", "^GSPC": "S&P 500", "^IXIC": "NASDAQ Composite"}
 
-    # Get the currentd date
+    # Get the current date
     current_date = get_current_date(start, index_name)
 
     # Create the end dates

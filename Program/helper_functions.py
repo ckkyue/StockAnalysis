@@ -16,7 +16,7 @@ def get_current_date(start, index_name):
         # Revert back one day
         current_date = (start - dt.timedelta(days=1)).strftime("%Y-%m-%d")
     else:
-        if index_name == "^HSI":
+        if index_name == "^HSI" and start.hour > 16:
             current_date = (start + dt.timedelta(days=1)).strftime("%Y-%m-%d")
         else:
             current_date = start.strftime("%Y-%m-%d")

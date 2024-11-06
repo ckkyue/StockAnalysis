@@ -456,4 +456,7 @@ def check_bgu(df):
     # Calculate the gap up volume
     volume_bgu = 1.5 * volume_sma50
 
-    return np.array([price_bgu, volume_bgu])
+    # Estimate the number of shares from volume
+    share_bgu = round(volume_bgu / current_close)
+
+    return np.array([round(price_bgu, 2), share_bgu])

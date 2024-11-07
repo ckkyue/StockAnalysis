@@ -257,7 +257,7 @@ def main():
     # # Screen the stocks from Excel file
     # screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
 
-    plot_marketbreadth = False
+    plot_marketbreadth = True
     if plot_marketbreadth:
         # Get the list of tickers of stock market
         index_df = get_df(index_name, current_date)

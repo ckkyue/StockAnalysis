@@ -152,7 +152,7 @@ def main():
     RS = 90
 
     # Index
-    index_name = "^GSPC"
+    index_name = "^HSI"
     index_names = ["^HSI", "^GSPC", "^IXIC", "^DJI", "IWM", "FFTY", "QQQE", "GC=F"]
     index_dict = {"^HSI": "HKEX", "^GSPC": "S&P 500", "^IXIC": "NASDAQ Composite", "^DJI": "Dow Jones Industrial Average", 
                   "IWM": "iShares Russell 2000 ETF", "FFTY": "Innovator IBD 50 ETF", "QQQE": "NASDAQ-100 Equal Weighted ETF", 
@@ -189,7 +189,7 @@ def main():
             # Visualize the closing price history of the ticker
             plot_close(ticker, df, MVP_VCP=False, save=True)
 
-    sector_rotation = True
+    sector_rotation = False
     if sector_rotation:
         # Calculate the JdK RS-Ratio and Momentum
         index_df = get_JdK(index_names + sectors, index_df, current_date)
@@ -230,7 +230,7 @@ def main():
             # Plot the JdK RS-Ratio and Momentum of the sector
             plot_JdK(sector, sector_dict, index_df, save=True)
 
-    sector_selected = True
+    sector_selected = False
     if sector_selected:
         # Plot the relative rotation graph
         plot_rrg(sectors, sector_dict, index_df, "sector", save=True)
@@ -238,18 +238,18 @@ def main():
         # Plot the sectors of the selected stocks
         plot_sector_selected(current_date, "^GSPC", index_dict, NASDAQ_all=NASDAQ_all, save=True)
     
-    hkex_retracement = False
+    hkex_retracement = True
     if hkex_retracement:
         # Get the Excel filename
         excel_filename = get_excel_filename(current_date, "^HSI", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)
 
         retracement_excel(excel_filename, current_date)
 
-    # Get the Excel filename
-    excel_filename = get_excel_filename(current_date, "^GSPC", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)
+    # # Get the Excel filename
+    # excel_filename = get_excel_filename(current_date, "^GSPC", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)
 
-    # Screen the stocks from Excel file
-    screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
+    # # Screen the stocks from Excel file
+    # screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
 
     # # Get the Excel filename
     # excel_filename = get_excel_filename(current_date, "^HSI", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)
@@ -257,7 +257,7 @@ def main():
     # # Screen the stocks from Excel file
     # screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
 
-    plot_marketbreadth = True
+    plot_marketbreadth = False
     if plot_marketbreadth:
         # Get the list of tickers of stock market
         index_df = get_df(index_name, current_date)
@@ -275,7 +275,7 @@ def main():
         plot_close(index_name, index_df, MVP_VCP=False)
         plot_MFI_RSI(index_name, index_df, 252, save=True)
     
-    plot_vix = True
+    plot_vix = False
     if plot_vix:
         # Get the price data of CBOE Volatility Index (VIX)
         vix_df = get_df("^VIX", current_date)

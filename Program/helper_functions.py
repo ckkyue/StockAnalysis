@@ -9,19 +9,36 @@ from scipy.stats import linregress
 from yahoo_fin import stock_info as si
 import yfinance as yf
 
+# Determines if a given time is within the Daylight Saving Time (DST) period in the USA.
+def check_DST(start):
+   # Get the current year
+    year = start.year
+
+    # Calculate the second Sunday in March
+    march1 = dt.datetime(year, 3, 1)
+    sun_march2 = march1 + dt.timedelta(days=(6 - march1.weekday()) % 7) + dt.timedelta(weeks=1)
+
+    # Calculate the first Sunday in November
+    nov1 = dt.datetime(year, 11, 1)
+    sun_nov1 = nov1 + dt.timedelta(days=(6 - nov1.weekday()) % 7)
+
+    # Return both dates as strings
+    return sun_march2 <=  start <= sun_nov1
+
 # Get the current date
 def get_current_date(start, index_name):
-    # Check if today is Sunday
+    # Always revert to the previous day for Sunday
     if start.weekday() == 6:
-        # Revert back one day
-        current_date = (start - dt.timedelta(days=1)).strftime("%Y-%m-%d")
+        return (start - dt.timedelta(days=1)).strftime("%Y-%m-%d")
+
+    # Adjust based on time and DST
+    dst_offset = 0 if check_DST(start) else 1
+    hour_cutoff = 16 if index_name == "^HSI" else 4 + dst_offset
+
+    if start.hour >= hour_cutoff:
+        return (start + dt.timedelta(days=1)).strftime("%Y-%m-%d")
     else:
-        if index_name == "^HSI" and start.hour > 16:
-            current_date = (start + dt.timedelta(days=1)).strftime("%Y-%m-%d")
-        else:
-            current_date = start.strftime("%Y-%m-%d")
-    
-    return current_date
+        return start.strftime("%Y-%m-%d")
 
 # Get the price data of a stock
 def get_df(stock, end_date, interval="1d", redownload=False):

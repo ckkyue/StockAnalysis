@@ -30,6 +30,10 @@ def get_current_date(start, index_name):
     # Always revert to the previous day for Sunday
     if start.weekday() == 6:
         return (start - dt.timedelta(days=1)).strftime("%Y-%m-%d")
+    
+    # Handle Saturday
+    if start.weekday() == 5:
+        return start.strftime("%Y-%m-%d")
 
     # Adjust based on time and DST
     dst_offset = 0 if check_DST(start) else 1

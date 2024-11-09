@@ -49,7 +49,6 @@ def screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
     # Highlight the cells of each row
     if sector_col_index is not None:
         for row in sheet.iter_rows(min_row=2): # Start from the second row
-            stock_cell = row[stock_col_index - 1] # Adjust for zero-based index
             volatility20_cell = row[volatility20_col_index - 1]
             volatility60_cell = row[volatility60_col_index - 1]
             sector_cell = row[sector_col_index - 1]
@@ -70,7 +69,6 @@ def screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
 
             # Highlight the stock if its sector matches
             if sector_cell.value in sectors_excel_leading + sectors_excel_improving:
-                stock_cell.fill = yellow_fill
                 sector_cell.fill = yellow_fill
 
             # Change text colour to green if MVP

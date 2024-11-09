@@ -128,21 +128,13 @@ def create_rs_volume_df(tickers, current_date, end_dates, periods, index_returns
         # Get the list of dates
         dates = [file.split("_")[-1].replace(".csv", "") for file in current_files]
 
-        # Get the maximum date from the list of dates
-        max_date = max(dates) if dates else "N/A"
-
-        # Remove the old files for dates prior to the maximum date
-        if max_date != "N/A":
-            for date in dates:
-                if date < max_date:
-                    os.remove(os.path.join(result_folder, f"{infix}rsvolume_{date}.csv"))
-            # Define the filename
-            if end_date >= max_date:
-                filename = os.path.join(result_folder, f"{infix}rsvolume_{end_date}.csv")
-            else:
-                filename = os.path.join(result_folder, f"{infix}rsvolume_{max_date}.csv")
-        else:
-            filename = os.path.join(result_folder, f"{infix}rsvolume_{end_date}.csv")
+        # Remove the old files for dates prior to the end date
+        for date in dates:
+            if date < end_date:
+                os.remove(os.path.join(result_folder, f"{infix}rsvolume_{date}.csv"))
+                
+        # Define the filename
+        filename = os.path.join(result_folder, f"{infix}rsvolume_{end_date}.csv")
 
         # Save the merged dataframe to a .csv file
         if not backtest:

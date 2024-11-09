@@ -208,13 +208,17 @@ def merge_stocks(stocks, end_date):
     return df_merged
 
 # Get the list of tickers of stock market
-def stock_market(end_date, current_date, index_name, NASDAQ_all):
+def stock_market(end_date, current_date, index_name, HKEX_all, NASDAQ_all):
     # HKEX
     if index_name == "^HSI":
-        hkex_df = pd.read_excel("Program/ListOfSecurities.xlsx", skiprows=2)
-        hkex_df = hkex_df[hkex_df["Category"] == "Equity"]
-        stocks = hkex_df["Stock Code"].tolist()
-        tickers = [str(int(stock)).zfill(4) + '.HK' for stock in stocks]
+        if HKEX_all:
+            hkex_df = pd.read_excel("Program/ListOfSecurities.xlsx", skiprows=2)
+            hkex_df = hkex_df[hkex_df["Category"] == "Equity"]
+            stocks = hkex_df["Stock Code"].tolist()
+            tickers = [str(int(stock)).zfill(4) + '.HK' for stock in stocks]
+        else:
+            hsi_df = pd.read_csv("Program/constituents-hsi.csv")
+            tickers = hsi_df["Symbol"].tolist()
 
     # S&P 500
     elif not NASDAQ_all and index_name == "^GSPC":

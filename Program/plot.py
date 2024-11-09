@@ -3,16 +3,18 @@ import datetime as dt
 from dateutil.relativedelta import relativedelta
 from helper_functions import get_df, get_infix, merge_stocks
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 import numpy as np
 import os
 import pandas as pd
 from scipy.signal import argrelextrema
+from scipy.stats import linregress
 import seaborn as sns
 from statsmodels.tsa.stattools import acf
 from technicals import *
 
 # Visualize the closing price history
-def plot_close(stock, df, show=120, MVP_VCP=True, local_extrema=False, local_extrema_period=5, save=False):
+def plot_close(stock, df, show=120, MVP_VCP=True, local_extrema=False, local_extrema_period=5, FTD_DD=False, save=False):
     # Add technical indicators to the data
     add_indicator(df)
 
@@ -61,8 +63,11 @@ def plot_close(stock, df, show=120, MVP_VCP=True, local_extrema=False, local_ext
         ax1.scatter(df.index[df["MVP"] == "MV"], df["Close"][df["MVP"] == "MV"], marker="^", edgecolor="black", facecolors="blue", label="MV")
         ax1.scatter(df.index[df["MVP"] == "MVP"], df["Close"][df["MVP"] == "MVP"], marker="^", edgecolor="black", facecolors="green", label="MVP")
         ax1.scatter(df.index[df["VCP"] == True], df["Close"][df["VCP"] == True], marker=">", edgecolor="black", facecolors="orange", label="VCP")
-    else:
-        pass
+
+    # Plot FTDs and DDs on the top subplot
+    if FTD_DD:
+        ax1.scatter(df.index[df["FTD"]], df["Low"][df["FTD"]] * 0.98, marker="x", color="green", label="FTD")
+        ax1.scatter(df.index[df["DD"]], df["Low"][df["DD"]] * 0.98, marker="x", color="red", label="DD")
 
     # Scatter points for local minima and maxima
     if local_extrema:
@@ -93,6 +98,8 @@ def plot_close(stock, df, show=120, MVP_VCP=True, local_extrema=False, local_ext
 
         # Plot the volume SMA 50 on the bottom subplot
         ax2.plot(df["Volume SMA 50"], label="Volume SMA 50", color="purple")
+
+        # Plot the follow-through days (FTDs) and distribution days (DDs)
 
         # Set the label of the bottom subplot
         ax2.set_ylabel("Volume")
@@ -320,7 +327,7 @@ def plot_FTD_DD(stock, df, show=252*2, save=False):
     plt.title(f"Follow-through days and distribution days for {stock}")
 
     # Set the legend
-    plt.legend(["Close", "follow-through day", "distribution day", "multiple follow-through days", "multiple distribution days"])
+    plt.legend(["Close", "FTD", "DD", "Multiple FTDs", "Multiple DDs"])
 
     # Adjust the spacing between subplots
     plt.tight_layout()
@@ -732,6 +739,126 @@ def plot_autocorr(stock, end_date, years):
 
     # Set the legend
     plt.legend()
+
+    # Show the plot
+    plt.show()
+
+# Plot the comparison between long term and short term RS
+def plot_longshortRS(merged_df, end_date1, end_date2, stock_star=None):
+    # Scatter plot of short-term RS against long-term RS
+    plt.figure(figsize=(10, 6))
+    plt.scatter(merged_df["Long-term RS"], merged_df["Short-term RS"], color="blue", marker="x")
+
+    # Highlight the specific ticker with a star
+    star = merged_df[merged_df["Ticker"] == stock_star]
+    if not star.empty:
+        plt.scatter(star["Long-term RS"], star["Short-term RS"], color="gold", edgecolor="black", marker="*", s=100, label=stock_star)
+
+    # Plot a red vertical line at long-term RS = 20
+    plt.axvline(x=20, color="red", linestyle="--")
+
+    # Calculate the slope and R^2
+    slope, intercept, r_value, _, _ = linregress(merged_df["Long-term RS"], merged_df["Short-term RS"])
+    r_squared = r_value**2
+
+    # Create the regression line
+    x_values = np.linspace(0, 100, 100)
+    y_values = slope * x_values + intercept
+    plt.plot(x_values, y_values, color="black", linestyle="--", label=fr"slope$={slope:.2f}$, $R^2={r_squared:.2f}$")
+
+    # Set the axes labels
+    plt.xlabel("Long-term RS")
+    plt.ylabel("Short-term RS")
+
+    # Set the title
+    plt.title(f"Long-term vs Short-term RS ({end_date1} to {end_date2})")
+
+    # Set the legend
+    plt.legend()
+
+    # Show the plot
+    plt.show()
+
+# Plot the comparison between long and short term RS
+def plot_compare_longshortRS(index_df, index_name, rs_slopes, r_squareds, end_dates, end_dates2, save=False):
+    # Filter the dataframe
+    index_df = index_df.loc[(index_df.index >= end_dates[0]) & (index_df.index <= end_dates[-1])]
+
+    # Create a figure with four subplots, one for the closing price, one for the RS slope, one for the R^2 values, and one for the Z-Score of product
+    fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(8, 8), gridspec_kw={"height_ratios": [3, 0.5, 0.5, 1]}, sharex=True)
+
+    # Plot the closing price on the first subplot
+    ax1.plot(index_df["Close"], label="Close")
+
+    # Set the y label of the first subplot
+    ax1.set_ylabel("Price")
+
+    # Set the x limit of the first subplot
+    ax1.set_xlim(index_df.index[0], index_df.index[-1])
+
+    # Create a dataframe for RS slope
+    rs_slope_df = pd.DataFrame({"RS Slope": rs_slopes}, index=pd.to_datetime(end_dates2))
+
+    # Plot the RS slope on the second subplot
+    ax2.plot(rs_slope_df["RS Slope"], color="orange")
+
+    # Add a horizontal line at y=0
+    ax2.axhline(y=0, color="black", linestyle="--", linewidth=0.5)
+
+    # Set the y label for the second subplot
+    ax2.set_ylabel("RS slope")
+
+    # Create a dataframe for R^2
+    r_squareds_df = pd.DataFrame({"R^2": r_squareds}, index=pd.to_datetime(end_dates2))
+
+    # Plot the R^2 on the third subplot
+    ax3.plot(r_squareds_df, color="orange")
+
+    # Set the y label for the third subplot
+    ax3.set_ylabel(r"$R^2$")
+
+    # Calculate the z-scores of the product of RS slope and R^2
+    rs_slopes_r2 = np.array(rs_slopes) * r_squareds
+    rs_slopes_r2_mean = np.mean(rs_slopes_r2)
+    rs_slopes_r2_std = np.std(rs_slopes_r2)
+    z_scores = (rs_slopes_r2 - rs_slopes_r2_mean) / rs_slopes_r2_std
+
+    # Create a dataframe for z-scores
+    z_scores_df = pd.DataFrame({"Z-Score": z_scores}, index=pd.to_datetime(end_dates2))
+
+    # Plot the z-scores of the product of RS slope and R^2 on the fourth subplot
+    ax4.plot(z_scores_df, color="orange")
+
+    # Add a horizontal line at y=0
+    ax4.axhline(y=0, color="black", linestyle="--", linewidth=0.5)
+
+    # Add a red dotted line at y=2
+    ax4.axhline(y=2, color="red", linestyle="dotted")
+
+    # Add a red dotted line at y=-2
+    ax4.axhline(y=-2, color="red", linestyle="dotted")
+
+    # Set the y label for the fourth subplot
+    ax4.set_ylabel("Combined Z-Score")
+
+    # Ensure y-axis ticks are integers
+    ax4.yaxis.set_major_locator(MaxNLocator(integer=True))
+
+    # Set the x label
+    plt.xlabel("Date")
+
+    # Set the title
+    plt.suptitle(f"RS slope for {index_name}")
+
+    # Set the legend
+    ax1.legend()
+
+    # Adjust the spacing between subplots
+    plt.tight_layout()
+
+    # Save the plot
+    if save:
+        plt.savefig(f"Result/Figure/RSslope{index_name}.png", dpi=300)
 
     # Show the plot
     plt.show()

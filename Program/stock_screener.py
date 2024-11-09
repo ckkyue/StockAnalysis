@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 from pandas import ExcelWriter as EW
 import os
+from scipy.stats import linregress
 from sklearn.preprocessing import MinMaxScaler
 from technicals import *
 from tqdm import tqdm
@@ -148,6 +149,98 @@ def create_rs_volume_df(tickers, current_date, end_dates, periods, index_returns
         return rs_dfs[0], volume_dfs[0], rs_volume_dfs[0]
     else:
         return rs_dfs, volume_dfs, rs_volume_dfs
+
+# Combine the long term and short term RS dataframes
+def longshortRS(stocks, index_df, index_name, index_dict, NASDAQ_all, current_date, end_dates1, end_dates2, periods1, periods2, result_folder, volume_filter=None):
+    # Get the infix
+    infix = get_infix(index_name, index_dict, NASDAQ_all)
+
+    # Convert inputs to lists
+    if not isinstance(end_dates1, list):
+        end_dates1 = [end_dates1]
+    if not isinstance(end_dates2, list):
+        end_dates2 = [end_dates2]
+    if not isinstance(periods1, list):
+        periods1 = [periods1]
+    if not isinstance(periods2, list):
+        periods2 = [periods2]
+        
+    # Initialize an empty list to store the merged dataframes
+    merged_dfs = []
+
+    # Initialize an empty list to store the index returns
+    index_returns = []
+
+    # Iterate over all combinations
+    for end_date1, end_date2, period1, period2 in zip(end_dates1, end_dates2, periods1, periods2):
+        # Filter the data
+        index_df1 = index_df[index_df.index <= end_date1]
+        index_df2 = index_df[index_df.index <= end_date2]
+
+        # Calculate the percent change of the index
+        index_df1.loc[:, "Percent Change"] = index_df1["Close"].pct_change()
+        index_df2.loc[:, "Percent Change"] = index_df2["Close"].pct_change()
+        
+        # Calculate the total return of the index
+        index_return1 = (index_df1["Percent Change"] + 1).tail(period1).cumprod().iloc[-1]
+        index_return2 = (index_df2["Percent Change"] + 1).tail(period2).cumprod().iloc[-1]
+        index_shortName = index_dict[f"{index_name}"]
+        print(f"Return for {index_shortName} between {index_df1.index[-period1].strftime('%Y-%m-%d')} and {end_date1}: {index_return1:.2f}")
+        print(f"Return for {index_shortName} between {index_df2.index[-period2].strftime('%Y-%m-%d')} and {end_date2}: {index_return2:.2f}")
+
+        index_returns.extend([index_return1, index_return2])
+        
+    rs_dfs, volume_dfs, _ = create_rs_volume_df(stocks, current_date, end_dates1 + end_dates2, periods1 + periods2, index_returns, index_shortName, result_folder, infix, True, print_multiple=False)
+
+    # Separate the dataframes into two halves
+    length_df = len(rs_dfs) // 2
+    rs_dfs1, rs_dfs2 = rs_dfs[:length_df], rs_dfs[length_df:]
+    volume_dfs1, volume_dfs2 = volume_dfs[:length_df], volume_dfs[length_df:]
+
+    for rs_df1, rs_df2, volume_df1, volume_df2 in zip(rs_dfs1, rs_dfs2, volume_dfs1, volume_dfs2):
+        if volume_filter is not None:
+            volume_df1 = volume_df1[(volume_df1["Volume SMA 5 Rank"] <= volume_filter) | (volume_df1["Volume SMA 20 Rank"] <= volume_filter)]
+            volume_df2 = volume_df2[(volume_df2["Volume SMA 5 Rank"] <= volume_filter) | (volume_df2["Volume SMA 20 Rank"] <= volume_filter)]
+
+            # Filter rs_df1 and rs_df2 based on the tickers present in volume dataframes
+            rs_df1 = rs_df1[rs_df1["Ticker"].isin(set(volume_df1["Ticker"]))]
+            rs_df2 = rs_df2[rs_df2["Ticker"].isin(set(volume_df2["Ticker"]))]
+
+        # Merge and clean data
+        merged_df = pd.merge(rs_df1, rs_df2, on="Ticker", suffixes=(" 1", " 2"))
+        merged_df = merged_df.rename(columns={"RS 1": "Long-term RS", "RS 2": "Short-term RS"}).dropna()
+        merged_dfs.append(merged_df)
+
+    return merged_dfs[0] if len(merged_dfs) == 1 else merged_dfs
+
+# Compare the long and short term RS
+def compare_longshortRS(stocks, index_df, index_name, index_dict, NASDAQ_all, current_date, end_dates, period1, period2, result_folder):
+    # Initialize two empty lists to store the RS slopes and R^2 values
+    rs_slopes = []
+    r_squareds = []
+
+    # Define the end dates and periods
+    end_dates1 = []
+    end_dates2 = []
+    for i in range(len(end_dates) - 1):
+        end_date = end_dates[i]
+        end_dates1.append(end_date)
+        end_dates2.append((dt.datetime.strptime(end_date, "%Y-%m-%d") + relativedelta(days=20)).strftime("%Y-%m-%d"))
+    periods1 = [period1] * len(end_dates1)
+    periods2 = [period2] * len(end_dates2)
+
+    # Get the merged dataframe
+    merged_dfs = longshortRS(stocks, index_df, index_name, index_dict, NASDAQ_all, current_date, end_dates1, end_dates2, periods1, periods2, result_folder)
+    
+    # Iterate over merged dataframe
+    for merged_df in merged_dfs:
+        # Calculate the slope and R^2
+        rs_slope, _, r_value, _, _ = linregress(merged_df["Long-term RS"], merged_df["Short-term RS"])
+        r_squared = r_value**2
+        rs_slopes.append(rs_slope)
+        r_squareds.append(r_squared)
+        
+    return rs_slopes, r_squareds, end_dates2
 
 # Get the information of a stock from yfinance
 def get_stock_info(stock):
@@ -577,6 +670,7 @@ def main():
             os.makedirs(folder)
     
     # Variables
+    HKEX_all = False
     NASDAQ_all = True
     period_hk = 60 # Period for HK stocks
     period_us = 252 # Period for US stocks

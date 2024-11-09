@@ -144,6 +144,7 @@ def main():
     start = dt.datetime.now()
 
    # Variables
+    HKEX_all = False
     NASDAQ_all = True
     period_hk = 60 # Period for HK stocks
     period_us = 252 # Period for US stocks

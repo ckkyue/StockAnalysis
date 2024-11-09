@@ -126,8 +126,9 @@ def main():
     start = dt.datetime.now()
 
     # Variables
+    HKEX_all = False
     NASDAQ_all = True
-    factors = [0.05, 0.95, 0.0]
+    factors = [0.65, 0.05, 0.3]
 
     # Index
     index_name = "^GSPC"

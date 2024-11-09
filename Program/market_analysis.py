@@ -178,7 +178,7 @@ def main():
     # Get the price data of the index
     index_df = get_df(index_name, current_date)
 
-    plot_all = True
+    plot_all = False
     if plot_all:
         # Iterate over all indices and sectors
         for ticker in index_names + sectors:
@@ -222,7 +222,7 @@ def main():
         print(f"Improving sectors: {', '.join(sectors_improving)}")
         print(f"Lagging sectors: {', '.join(sectors_lagging)}")
 
-    plot_all_jdk = True
+    plot_all_jdk = False
     if plot_all_jdk:
         # Iterate over all sectors
         for sector in sectors:
@@ -244,23 +244,27 @@ def main():
 
         retracement_excel(excel_filename, current_date)
 
-    # Get the Excel filename
-    excel_filename = get_excel_filename(current_date, "^GSPC", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)
+    screen_us = False
+    if screen_us:
+        # Get the Excel filename
+        excel_filename = get_excel_filename(current_date, "^GSPC", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)
 
-    # Screen the stocks from Excel file
-    screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
+        # Screen the stocks from Excel file
+        screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
 
-    # # Get the Excel filename
-    # excel_filename = get_excel_filename(current_date, "^HSI", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)
+    screen_hk = False
+    if screen_hk:
+        # Get the Excel filename
+        excel_filename = get_excel_filename(current_date, "^HSI", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)
 
-    # # Screen the stocks from Excel file
-    # screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
+        # Screen the stocks from Excel file
+        screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
 
     plot_marketbreadth = True
     if plot_marketbreadth:
         # Get the list of tickers of stock market
         index_df = get_df(index_name, current_date)
-        tickers = stock_market(current_date, current_date, index_name, False)
+        tickers = stock_market(current_date, current_date, index_name, HKEX_all, False)
 
         # Calculate the market breadth indicators
         index_df = market_breadth(current_date, index_df, tickers)

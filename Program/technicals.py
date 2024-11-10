@@ -1,8 +1,203 @@
 # Imports
+import datetime as dt
+from dateutil.relativedelta import relativedelta
 from helper_functions import get_df, slope_reg
 import numpy as np
+import os
 import pandas as pd
+from scipy.stats import linregress
 from tqdm import tqdm
+
+# Create dataframes to store RS ratings and volume ranks
+def create_rs_volume_df(tickers, current_date, end_dates, periods, index_returns, index_shortName, result_folder, infix, backtest, print_multiple=True):
+    # Convert inputs to lists
+    if not isinstance(end_dates, list):
+        end_dates = [end_dates]
+    if not isinstance(periods, list):
+        periods = [periods]
+    if not isinstance(index_returns, list):
+        index_returns = [index_returns]
+
+    # Initialize three empty lists to store rs_df, volume_df, and rs_volume_df
+    rs_dfs = []
+    volume_dfs = []
+    rs_volume_dfs = []
+
+    # Fetch data once per ticker
+    dfs = {}
+    for ticker in tqdm(tickers, desc="Fetching ticker data"):
+        dfs[ticker] = get_df(ticker, current_date)
+    
+    # Iterate over all combinations of end dates, periods, and index return
+    for end_date, period, index_return in zip(end_dates, periods, index_returns):
+        return_muls = {}
+        volume_smas = {}
+
+        # Iterate over all tickers
+        for ticker in tqdm(tickers, desc=f"Processing data for {end_date}"):
+            try:
+                df = dfs.get(ticker)
+                if df is None:
+                    continue
+                
+                # Filter the data
+                df = df[df.index <= end_date]
+
+                # Calculate the percent change of the stock
+                df["Percent Change"] = df["Close"].pct_change()
+
+                # Calculate the stock return
+                stock_return = (df["Percent Change"] + 1).tail(period).cumprod().iloc[-1]
+
+                # Calculate the stock return relative to the market
+                return_mul = stock_return / index_return
+                return_muls[ticker] = return_mul
+                if print_multiple:
+                    print(f"Ticker: {ticker} ; Return multiple against {index_shortName}: {round(return_mul, 2)}\n")
+                
+                # Calculate the moving averages of volume
+                df["Volume SMA 5"] = SMA(df, 5, column="Volume")
+                df["Volume SMA 20"] = SMA(df, 20, column="Volume")
+                volume_smas[ticker] = {"Volume SMA 5": df["Volume SMA 5"].iloc[-1], "Volume SMA 20": df["Volume SMA 20"].iloc[-1]}
+
+            except Exception as e:
+                print(f"Error processing data for {ticker}: {e}\n")
+                continue
+
+            # time.sleep(0.05)
+            
+        # Create a dataframe to store the RS ratings of tickers
+        return_muls = dict(sorted(return_muls.items(), key=lambda x: x[1], reverse=True))
+        rs_df = pd.DataFrame(return_muls.items(), columns=["Ticker", "Value"])
+        rs_df["RS"] = rs_df["Value"].rank(pct=True) * 100
+        rs_df = rs_df[["Ticker", "RS"]]
+
+        # Create a dataframe to store the volume ranks of tickers
+        volume_df = pd.DataFrame.from_dict(volume_smas, orient="index", columns=["Volume SMA 5", "Volume SMA 20"])
+        volume_df["Ticker"] = volume_df.index
+        volume_df.reset_index(drop=True, inplace=True)
+        volume_df["Volume SMA 5 Rank"] = volume_df["Volume SMA 5"].rank(ascending=False)
+        volume_df["Volume SMA 20 Rank"] = volume_df["Volume SMA 20"].rank(ascending=False)
+
+        # Merge the dataframes
+        rs_volume_df = pd.merge(rs_df, volume_df, on="Ticker")
+        rs_volume_df = rs_volume_df.sort_values(by="RS", ascending=False)
+
+        # Check if there are pre-existing data
+        current_files = [file for file in os.listdir(result_folder) if file.startswith(f"{infix}rsvolume_")]
+
+        # Get the list of dates
+        dates = [file.split("_")[-1].replace(".csv", "") for file in current_files]
+
+        # Remove the old files for dates prior to the end date
+        for date in dates:
+            if date < end_date:
+                os.remove(os.path.join(result_folder, f"{infix}rsvolume_{date}.csv"))
+                
+        # Define the filename
+        filename = os.path.join(result_folder, f"{infix}rsvolume_{end_date}.csv")
+
+        # Save the merged dataframe to a .csv file
+        if not backtest:
+            rs_volume_df.to_csv(filename, index=False)
+
+        rs_dfs.append(rs_df)
+        volume_dfs.append(volume_df)
+        rs_volume_dfs.append(rs_volume_df)
+
+    if len(rs_dfs) == 1:
+        return rs_dfs[0], volume_dfs[0], rs_volume_dfs[0]
+    else:
+        return rs_dfs, volume_dfs, rs_volume_dfs
+
+# Combine the long term and short term RS dataframes
+def longshortRS(stocks, index_df, index_name, index_dict, NASDAQ_all, current_date, end_dates1, end_dates2, periods1, periods2, result_folder, infix, volume_filter=None):
+    # Convert inputs to lists
+    if not isinstance(end_dates1, list):
+        end_dates1 = [end_dates1]
+    if not isinstance(end_dates2, list):
+        end_dates2 = [end_dates2]
+    if not isinstance(periods1, list):
+        periods1 = [periods1]
+    if not isinstance(periods2, list):
+        periods2 = [periods2]
+        
+    # Initialize an empty list to store the merged dataframes
+    merged_dfs = []
+
+    # Initialize an empty list to store the index returns
+    index_returns = []
+
+    # Iterate over all combinations
+    for end_date1, end_date2, period1, period2 in zip(end_dates1, end_dates2, periods1, periods2):
+        # Filter the data
+        index_df1 = index_df[index_df.index <= end_date1]
+        index_df2 = index_df[index_df.index <= end_date2]
+
+        # Calculate the percent change of the index
+        index_df1.loc[:, "Percent Change"] = index_df1["Close"].pct_change()
+        index_df2.loc[:, "Percent Change"] = index_df2["Close"].pct_change()
+        
+        # Calculate the total return of the index
+        index_return1 = (index_df1["Percent Change"] + 1).tail(period1).cumprod().iloc[-1]
+        index_return2 = (index_df2["Percent Change"] + 1).tail(period2).cumprod().iloc[-1]
+        index_shortName = index_dict[f"{index_name}"]
+        print(f"Return for {index_shortName} between {index_df1.index[-period1].strftime('%Y-%m-%d')} and {end_date1}: {index_return1:.2f}")
+        print(f"Return for {index_shortName} between {index_df2.index[-period2].strftime('%Y-%m-%d')} and {end_date2}: {index_return2:.2f}")
+
+        index_returns.extend([index_return1, index_return2])
+        
+    rs_dfs, volume_dfs, _ = create_rs_volume_df(stocks, current_date, end_dates1 + end_dates2, periods1 + periods2, index_returns, index_shortName, result_folder, infix, True, print_multiple=False)
+
+    # Separate the dataframes into two halves
+    length_df = len(rs_dfs) // 2
+    rs_dfs1, rs_dfs2 = rs_dfs[:length_df], rs_dfs[length_df:]
+    volume_dfs1, volume_dfs2 = volume_dfs[:length_df], volume_dfs[length_df:]
+
+    for rs_df1, rs_df2, volume_df1, volume_df2 in zip(rs_dfs1, rs_dfs2, volume_dfs1, volume_dfs2):
+        if volume_filter is not None:
+            volume_df1 = volume_df1[(volume_df1["Volume SMA 5 Rank"] <= volume_filter) | (volume_df1["Volume SMA 20 Rank"] <= volume_filter)]
+            volume_df2 = volume_df2[(volume_df2["Volume SMA 5 Rank"] <= volume_filter) | (volume_df2["Volume SMA 20 Rank"] <= volume_filter)]
+
+            # Filter rs_df1 and rs_df2 based on the tickers present in volume dataframes
+            rs_df1 = rs_df1[rs_df1["Ticker"].isin(set(volume_df1["Ticker"]))]
+            rs_df2 = rs_df2[rs_df2["Ticker"].isin(set(volume_df2["Ticker"]))]
+
+        # Merge and clean data
+        merged_df = pd.merge(rs_df1, rs_df2, on="Ticker", suffixes=(" 1", " 2"))
+        merged_df = merged_df.rename(columns={"RS 1": "Long-term RS", "RS 2": "Short-term RS"}).dropna()
+        merged_dfs.append(merged_df)
+
+    return merged_dfs[0] if len(merged_dfs) == 1 else merged_dfs
+
+# Compare the long and short term RS
+def compare_longshortRS(stocks, index_df, index_name, index_dict, NASDAQ_all, current_date, end_dates, period1, period2, result_folder, infix):
+    # Initialize two empty lists to store the RS slopes and R^2 values
+    rs_slopes = []
+    r_squareds = []
+
+    # Define the end dates and periods
+    end_dates1 = []
+    end_dates2 = []
+    for i in range(len(end_dates) - 1):
+        end_date = end_dates[i]
+        end_dates1.append(end_date)
+        end_dates2.append((dt.datetime.strptime(end_date, "%Y-%m-%d") + relativedelta(days=20)).strftime("%Y-%m-%d"))
+    periods1 = [period1] * len(end_dates1)
+    periods2 = [period2] * len(end_dates2)
+
+    # Get the merged dataframe
+    merged_dfs = longshortRS(stocks, index_df, index_name, index_dict, NASDAQ_all, current_date, end_dates1, end_dates2, periods1, periods2, result_folder, infix)
+    
+    # Iterate over merged dataframe
+    for merged_df in merged_dfs:
+        # Calculate the slope and R^2
+        rs_slope, _, r_value, _, _ = linregress(merged_df["Long-term RS"], merged_df["Short-term RS"])
+        r_squared = r_value**2
+        rs_slopes.append(rs_slope)
+        r_squareds.append(r_squared)
+        
+    return rs_slopes, r_squareds, end_dates2
 
 # Calculate the simple moving average (SMA)
 def SMA(data, period, column="Close"):
@@ -176,21 +371,6 @@ def OBOS(data, period=14, column="Close"):
 
     return data
 
-# Calculate the bull/bear power
-def bull_bear(data, period=13, column="Close"):
-    data_copy = data.copy()
-
-    # Calculate the bull power
-    data["Bull"] = data_copy["High"] - EMA(data_copy, period, column=column)
-
-    # Calculate the bear power
-    data["Bear"] = data_copy["Low"] - EMA(data_copy, period, column=column)
-
-    # Calculate the total bull/bear power
-    data["Bull Bear"] = data["Bull"] + data["Bear"]
-
-    return data
-
 # Calculate the MVP/VCP indicator
 def MVP_VCP(data, period_MVP=15, period_VCP=10, contraction=0.05, period=60, column="Close"):
     data_copy = data.copy()
@@ -243,12 +423,9 @@ def FTD_DD(data, period=50, threshold=0.015, column="Close"):
     & (data["Volume"] > data["Volume"].shift(1)) \
     & (data["Volume"] > data["Volume"].rolling(window=period).mean())
 
-    return data
-
-# Check if there are at least four FTDs or DDs recently
-def multiple_FTD_DD(data, period=10, columns=["FTD", "DD"]):
-    data["Multiple FTDs"] = data[columns[0]].rolling(period).sum() >= 4
-    data["Multiple DDs"] = data[columns[1]].rolling(period).sum() >= 4
+    # Check if there are at least four FTDs or DDs recently
+    data["Multiple FTDs"] = data["FTD"].rolling(period).sum() >= 4
+    data["Multiple DDs"] = data["DD"].rolling(period).sum() >= 4
 
     return data
 
@@ -307,6 +484,10 @@ def calculate_retracement(data, min_column="Low", max_column="High", buffer=15):
 
 # Calculate the Z-Score
 def calculate_ZScore(data, indicators, period):
+    # Convert inputs to lists
+    if not isinstance(indicators, list):
+        indicators = [indicators]
+
     for indicator in indicators:
         # Calculat the mean of indicator
         data[f"{indicator} Mean"] = data[f"{indicator}"].rolling(window=period).mean()
@@ -330,10 +511,8 @@ def add_indicator(data):
     CCI(data)
     ADX(data)
     OBOS(data)
-    bull_bear(data)
     MVP_VCP(data)
     FTD_DD(data)
-    multiple_FTD_DD(data)
 
     # Calculate the moving averages of closing prices and volumes
     periods = [5, 20, 50, 200]

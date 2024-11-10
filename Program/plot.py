@@ -129,7 +129,7 @@ def plot_close(stock, df, show=120, MVP_VCP=True, local_extrema=False, local_ext
     plt.show()
 
 # Plot the MFI/RSI indicator
-def plot_MFI_RSI(stock, df, period, show=252, save=False):
+def plot_MFI_RSI(stock, df, period=252, show=252, save=False):
     # Add technical indicators to the data
     add_indicator(df)
 
@@ -193,8 +193,69 @@ def plot_MFI_RSI(stock, df, period, show=252, save=False):
     # Show the plot
     plt.show()
 
+# Plot the ADX indicator
+def plot_ADX(stock, df, period=252, show=252, save=False):
+    # Add technical indicators to the data
+    add_indicator(df)
+
+    # Calculate the z-scores of ADX
+    df = calculate_ZScore(df, "ADX", period)
+
+    # Filter the data
+    df = df[- show:]
+
+    # Create a figure with three subplots, one for the closing price, one for the ADX indicator, and one for the ADX Z-Score
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(8, 8), gridspec_kw={"height_ratios": [3, 1, 1]}, sharex=True)
+
+    # Plot the closing price on the first subplot
+    ax1.plot(df["Close"], label="Close")
+
+    # Set the y label of the first subplot
+    ax1.set_ylabel("Price")
+
+    # Set the x limit of the first subplot
+    ax1.set_xlim(df.index[0], df.index[-1])
+
+    # Plot the ADX indicator on the second subplot
+    ax2.plot(df["ADX"], label="ADX", color="orange")
+
+    # Set the y label of the second subplot
+    ax2.set_ylabel(f"ADX")
+
+    # Plot the ADX Z-Score on the third subplot
+    ax3.plot(df["ADX Z-Score"], label="ADX Z-Score", color="orange")
+    ax3.axhline(y=2, linestyle="dotted", color="red")
+    ax3.axhline(y=-2, linestyle="dotted", color="red")
+
+    # Set the y label of the third subplot
+    ax3.set_ylabel(f"ADX Z-Score")
+
+    # Set the x label
+    plt.xlabel("Date")
+    
+    # Set the title
+    plt.suptitle(f"ADX for {stock}")
+
+    # Combine the legends and place them at the top subplot
+    handles, labels = ax1.get_legend_handles_labels()
+    handles += ax2.get_legend_handles_labels()[0]
+    labels += ax2.get_legend_handles_labels()[1]
+    ax1.legend(handles, labels)
+
+    # Adjust the spacing between subplots
+    plt.tight_layout()
+
+    # Save the plot
+    if save:
+        plt.savefig(f"Result/Figure/ADX{stock}.png", dpi=300)
+    else:
+        pass
+
+    # Show the plot
+    plt.show()
+
 # Plot the volatility
-def plot_volatility(stock, df, period, show=120, save=False):
+def plot_volatility(stock, df, period=252, show=120, save=False):
     # Add technical indicators to the data
     add_indicator(df)
 
@@ -214,35 +275,17 @@ def plot_volatility(stock, df, period, show=120, save=False):
     # Filter the data
     df = df[- show:]
 
-    # Define the widths
-    width_candle = 1
-    width_stick = 0.2
-
-    # Separate the dataframe into green and red candlesticks
-    up_df = df[df["Close"] >= df["Open"]]
-    down_df = df[df["Close"] <= df["Open"]]
-    colour_up = "green"
-    colour_down = "red"
-
     # Create a figure with four subplots, one for the price, one for the range z-score, one for the volume SMA 50 ratio z-score, and one for the combined z-score
     fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(8, 8), gridspec_kw={"height_ratios": [1, 1, 1, 1]}, sharex=True)
 
-    # Plot the up prices on the top subplot
-    ax1.bar(up_df.index, up_df["Close"] - up_df["Open"], width_candle, bottom=up_df["Open"], color=colour_up)
-    ax1.bar(up_df.index, up_df["High"] - up_df["Close"], width_stick, bottom=up_df["Close"], color=colour_up)
-    ax1.bar(up_df.index, up_df["Low"] - up_df["Open"], width_stick, bottom=up_df["Open"], color=colour_up)
+    # Plot the closing price on the first subplot
+    ax1.plot(df["Close"], label="Close")
 
-    # Plot the down prices on the top subplot
-    ax1.bar(down_df.index, down_df["Close"] - down_df["Open"], width_candle, bottom=down_df["Open"], color=colour_down)
-    ax1.bar(down_df.index, down_df["High"] - down_df["Open"], width_stick, bottom=down_df["Open"], color=colour_down)
-    ax1.bar(down_df.index, down_df["Low"] - down_df["Close"], width_stick, bottom=down_df["Close"], color=colour_down)
-
-    # Set the label of the first subplot
+    # Set the y label of the first subplot
     ax1.set_ylabel("Price")
 
     # Set the x limit of the first subplot
-    buffer = relativedelta(days=1)
-    ax1.set_xlim(df.index[0] - buffer, df.index[-1] + buffer)
+    ax1.set_xlim(df.index[0], df.index[-1])
 
     # Plot the range SMA 14 ratio z-score on the second subplot
     ax2.plot(df["Range/SMA14 Z-Score"])
@@ -376,7 +419,8 @@ def plot_market_breadth(index_name, index_df, tickers, periods=[20, 50, 200], sh
     ax1.set_ylabel("Price")
 
     # Set the x limit of the first subplot
-    ax1.set_xlim(index_df.index[0], index_df.index[-1])
+    buffer = relativedelta(days=1)
+    ax1.set_xlim(index_df.index[0] - buffer, index_df.index[-1] + buffer)
 
     # Plot the % of tickers above the SMAs on the second subplot
     for i in periods:

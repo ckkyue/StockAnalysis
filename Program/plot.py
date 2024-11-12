@@ -122,8 +122,6 @@ def plot_close(stock, df, show=120, MVP_VCP=True, local_extrema=False, local_ext
     # Save the plot
     if save:
         plt.savefig(f"Result/Figure/close{stock}.png", dpi=300)
-    else:
-        pass
 
     # Show the plot
     plt.show()
@@ -187,8 +185,6 @@ def plot_MFI_RSI(stock, df, period=252, show=252, save=False):
     # Save the plot
     if save:
         plt.savefig(f"Result/Figure/MFIRSI{stock}.png", dpi=300)
-    else:
-        pass
 
     # Show the plot
     plt.show()
@@ -248,8 +244,6 @@ def plot_ADX(stock, df, period=252, show=252, save=False):
     # Save the plot
     if save:
         plt.savefig(f"Result/Figure/ADX{stock}.png", dpi=300)
-    else:
-        pass
 
     # Show the plot
     plt.show()
@@ -378,8 +372,6 @@ def plot_FTD_DD(stock, df, show=252*2, save=False):
     # Save the plot
     if save:
         plt.savefig(f"Result/Figure/FTDDD{stock}.png", dpi=300)
-    else:
-        pass
 
     # Show the plot
     plt.show()
@@ -454,8 +446,6 @@ def plot_market_breadth(index_name, index_df, tickers, periods=[20, 50, 200], sh
     # Save the plot
     if save:
         plt.savefig(f"Result/Figure/marketbreadth{index_name}.png", dpi=300)
-    else:
-        pass
 
     # Show the plot
     plt.show()
@@ -495,8 +485,6 @@ def plot_stocks(stocks, current_date, column="Close", show=120, save=False):
     # Save the plot
     if save:
         plt.savefig("Result/Figure/closestocks.png", dpi=300)
-    else:
-        pass
 
     # Show the plot
     plt.show()
@@ -549,8 +537,6 @@ def plot_JdK(sector, sector_dict, index_df, show=120, save=False):
     # Save the plot
     if save:
         plt.savefig(f"Result/Figure/JdKRS{sector}.png", dpi=300)
-    else:
-        pass
 
     # Show the plot
     plt.show()
@@ -641,8 +627,6 @@ def plot_rrg(sectors, sector_dict, index_df, type, points=8, interval=5, save=Fa
             plt.savefig(f"Result/Figure/sectorrrg.png", dpi=300)
         elif type == "index":
             plt.savefig(f"Result/Figure/indexrrg.png", dpi=300)
-    else:
-        pass
 
     # Show the plot
     plt.show()
@@ -686,8 +670,6 @@ def plot_sector_selected(end_date, index_name, index_dict, period=252, RS=90, NA
     # Save the plot
     if save:
         plt.savefig(f"Result/Figure/{infix}sectorselected.png", dpi=300, bbox_inches="tight")
-    else:
-        pass
 
     # Show the plot
     plt.show()
@@ -903,6 +885,96 @@ def plot_compare_longshortRS(index_df, index_name, rs_slopes, r_squareds, end_da
     # Save the plot
     if save:
         plt.savefig(f"Result/Figure/RSslope{index_name}.png", dpi=300)
+
+    # Show the plot
+    plt.show()
+
+# Plot the 5-min intraday volume of a stock on a specific date
+def plot_volume5m(stock, df, date, period=50, save=False):
+    # Extract date and time components
+    df["Date"] = df.index.date.astype(str)
+    df["Time"] = df.index.time.astype(str)
+    df["Datetime"] = df.index
+
+    # Calculate the elapsed time of each day
+    df["Elapsed Time"] = df["Datetime"] - df["Date"].map(df.groupby("Date")["Datetime"].min())
+    
+    # Extract the dataframe of a specific date
+    df_date = df[df.index.get_level_values("Datetime").date == pd.to_datetime(date).date()]
+    
+    # Ensure df_date is not empty
+    if df_date.empty:
+        print(f"No data available for the date: {date}.")
+        return
+    
+    df0_hours = df_date["Elapsed Time"].dt.total_seconds() / 3600
+
+    # Calculate the SMA 50 and standard deviation of 5-min volume
+    volume5m_sma_df = df.groupby("Elapsed Time")["Volume"].rolling(period, min_periods=1).mean()
+    volume5m_sma_df0 = volume5m_sma_df[volume5m_sma_df.index.get_level_values("Datetime").date == pd.to_datetime(date).date()]
+    volume5m_sma_df0 = volume5m_sma_df0.droplevel(1)
+    volume5m_std_df = df.groupby("Elapsed Time")["Volume"].rolling(period, min_periods=1).std()
+    volume5m_std_df0 = volume5m_std_df[volume5m_std_df.index.get_level_values("Datetime").date == pd.to_datetime(date).date()]
+
+    # Ensure SMA values are properly indexed
+    sma_hours = volume5m_sma_df0.index.total_seconds() / 3600
+
+    # Create a figure with two subplots, one for the 5-min volume, one for the 5-min volume SMA 50 ratio, and one for the z-score
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(8, 8), gridspec_kw={"height_ratios": [3, 1, 1]}, sharex=True)
+    
+    # Plot the 5-min volume on the first subplot
+    ax1.bar(df0_hours, df_date["Volume"], width=5/60/2, label="5-min Volume", align="edge", alpha=0.7)
+
+    # Plot the 5-min volume SMA 50 on the first subplot
+    ax1.plot(sma_hours, volume5m_sma_df0.values, label=f"SMA {period}", color="purple")
+
+    # Calculate the ratio of the first 5-min volume with SMA 50
+    ratio = df_date["Volume"].iloc[0] / volume5m_sma_df0.values[0]
+
+    # Add ratio text next to the first volume point
+    ax1.text(df0_hours.iloc[0] + 0.05, df_date["Volume"].iloc[0], f"First 5-min ratio: {ratio:.2f}", fontsize=12)
+
+    # Set the y label of the first subplot
+    ax1.set_ylabel("Volume")
+
+    # Set the x limit of the first subplot
+    ax1.set_xlim(0, df0_hours.iloc[-1] + 5/60/2)
+
+    # Calculate the 5-min volume SMA 50 ratio
+    ratios = df_date["Volume"] / volume5m_sma_df0.values
+
+    # Plot the 5-min volume SMA 50 ratio on the second subplot
+    ax2.plot(df0_hours, ratios)
+
+    # Set the y label of the second subplot
+    ax2.set_ylabel("Vol/SMA 50")
+
+    # Calculate the z-scores
+    volume5m_zscores = (df_date["Volume"] - volume5m_sma_df0.values) / volume5m_std_df0.values
+
+    # Plot the z-scores on the third subplot
+    ax3.plot(df0_hours, volume5m_zscores)
+    ax3.axhline(y=2, linestyle="dotted", color="red")
+    ax3.axhline(y=-2, linestyle="dotted", color="red")
+
+    # Set the y label of the third subplot
+    ax3.set_ylabel("Vol/SMA50 Z-Score")
+
+    # Set the x label
+    plt.xlabel("Hour")
+
+    # Set the legend
+    ax1.legend()
+
+    # Set the title
+    plt.suptitle(f"5-min Intraday Volume of {stock} on {date}")
+    
+    # Adjust the spacing
+    plt.tight_layout()
+
+    # Save the plot
+    if save:
+        plt.savefig(f"Result/Figure/5minvol{stock}_{date}.png", dpi=300)
 
     # Show the plot
     plt.show()

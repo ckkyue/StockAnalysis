@@ -39,10 +39,16 @@ def get_current_date(start, index_name):
     dst_offset = 0 if check_DST(start) else 1
     hour_cutoff = 16 if index_name == "^HSI" else 4 + dst_offset
 
-    if start.hour >= hour_cutoff:
-        return (start + dt.timedelta(days=1)).strftime("%Y-%m-%d")
+    if index_name == "^HSI":
+        if start.hour >= hour_cutoff:
+            return (start + dt.timedelta(days=1)).strftime("%Y-%m-%d")
+        else:
+            return start.strftime("%Y-%m-%d")
     else:
-        return start.strftime("%Y-%m-%d")
+        if start.hour >= hour_cutoff:
+            return start.strftime("%Y-%m-%d")
+        else:
+            return (start - dt.timedelta(days=1)).strftime("%Y-%m-%d")
     
 # Generate a list of end dates
 def generate_end_dates(years, current_date, interval="1m", index_name="^GSPC"):
@@ -88,7 +94,7 @@ def generate_end_dates(years, current_date, interval="1m", index_name="^GSPC"):
         return None
     
 # Get the price data of a stock
-def get_df(stock, end_date, interval="1d", redownload=False):
+def get_df(stock, end_date, interval="1d", redownload=False, save=True):
     # Initial setup
     if interval in ["60m", "1h"]:
         csv_date = (dt.datetime.strptime(end_date, "%Y-%m-%d") - relativedelta(days=729)).strftime("%Y-%m-%d")
@@ -128,13 +134,17 @@ def get_df(stock, end_date, interval="1d", redownload=False):
     if not os.path.isfile(filename) or redownload:
         df = yf.download(stock, start=csv_date, end=end_date, interval=interval)
         if not df.empty:
-            df.to_csv(filename)
-            df = pd.read_csv(filename)
-
             # Remove the old file for the maximum date
             if max_date != "N/A":
                 if max_date < end_date:
                     os.remove(os.path.join(folder_path, f"{stock}_{max_date}.csv"))
+ 
+            if save:
+                df.to_csv(filename)
+                df = pd.read_csv(filename)
+                
+            else:
+                return df
                     
         else:
             try:
@@ -156,6 +166,45 @@ def get_df(stock, end_date, interval="1d", redownload=False):
         df.set_index("Datetime", inplace=True)
 
     return df
+
+# Get the 5-min volume data
+def get_volume5m_df(df, date, period=50):
+    # Extract date and time components
+    df["Date"] = df.index.date.astype(str)
+    df["Time"] = df.index.time.astype(str)
+    df["Datetime"] = df.index
+
+    # Calculate the elapsed time of each day
+    df["Elapsed Time"] = df["Datetime"] - df["Date"].map(df.groupby("Date")["Datetime"].min())
+
+    # Extract the dataframe of a specific date
+    df_date = df[df.index.get_level_values("Datetime").date == pd.to_datetime(date).date()]
+
+    # Ensure df_date is not empty
+    if df_date.empty:
+        print(f"No data available for the date: {date}.")
+        return None
+
+    # Calculate the number of hours of the specific date
+    df0_hours = df_date["Elapsed Time"].dt.total_seconds() / 3600
+
+    # Calculate the SMA 50 and standard deviation of 5-min volume
+    volume5m_sma_df = df.groupby("Elapsed Time")["Volume"].rolling(period, min_periods=1).mean()
+    volume5m_sma_df0 = volume5m_sma_df[volume5m_sma_df.index.get_level_values("Datetime").date == pd.to_datetime(date).date()]
+    volume5m_sma_df0 = volume5m_sma_df0.droplevel(1)
+    volume5m_std_df = df.groupby("Elapsed Time")["Volume"].rolling(period, min_periods=1).std()
+    volume5m_std_df0 = volume5m_std_df[volume5m_std_df.index.get_level_values("Datetime").date == pd.to_datetime(date).date()]
+
+    # Calculate the number of hours for SMA values
+    sma_hours = volume5m_sma_df0.index.total_seconds() / 3600
+
+    return {
+        "df_date": df_date,
+        "df0_hours": df0_hours,
+        "volume5m_sma_df0": volume5m_sma_df0,
+        "volume5m_std_df0": volume5m_std_df0,
+        "sma_hours": sma_hours,
+    }
 
 # Get the earning dates of using yfinance
 def get_earning_dates(stock):

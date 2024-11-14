@@ -890,34 +890,16 @@ def plot_compare_longshortRS(index_df, index_name, rs_slopes, r_squareds, end_da
     plt.show()
 
 # Plot the 5-min intraday volume of a stock on a specific date
-def plot_volume5m(stock, df, date, period=50, save=False):
-    # Extract date and time components
-    df["Date"] = df.index.date.astype(str)
-    df["Time"] = df.index.time.astype(str)
-    df["Datetime"] = df.index
-
-    # Calculate the elapsed time of each day
-    df["Elapsed Time"] = df["Datetime"] - df["Date"].map(df.groupby("Date")["Datetime"].min())
-    
-    # Extract the dataframe of a specific date
-    df_date = df[df.index.get_level_values("Datetime").date == pd.to_datetime(date).date()]
-    
-    # Ensure df_date is not empty
-    if df_date.empty:
-        print(f"No data available for the date: {date}.")
+def plot_volume5m(stock, volume5m_data, date, period=50, save=False):
+    # Extract the data
+    if volume5m_data is None:
         return
     
-    df0_hours = df_date["Elapsed Time"].dt.total_seconds() / 3600
-
-    # Calculate the SMA 50 and standard deviation of 5-min volume
-    volume5m_sma_df = df.groupby("Elapsed Time")["Volume"].rolling(period, min_periods=1).mean()
-    volume5m_sma_df0 = volume5m_sma_df[volume5m_sma_df.index.get_level_values("Datetime").date == pd.to_datetime(date).date()]
-    volume5m_sma_df0 = volume5m_sma_df0.droplevel(1)
-    volume5m_std_df = df.groupby("Elapsed Time")["Volume"].rolling(period, min_periods=1).std()
-    volume5m_std_df0 = volume5m_std_df[volume5m_std_df.index.get_level_values("Datetime").date == pd.to_datetime(date).date()]
-
-    # Ensure SMA values are properly indexed
-    sma_hours = volume5m_sma_df0.index.total_seconds() / 3600
+    df_date = volume5m_data["df_date"]
+    df0_hours = volume5m_data["df0_hours"]
+    volume5m_sma_df0 = volume5m_data["volume5m_sma_df0"]
+    volume5m_std_df0 = volume5m_data["volume5m_std_df0"]
+    sma_hours = volume5m_data["sma_hours"]
 
     # Create a figure with two subplots, one for the 5-min volume, one for the 5-min volume SMA 50 ratio, and one for the z-score
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(8, 8), gridspec_kw={"height_ratios": [3, 1, 1]}, sharex=True)

@@ -323,7 +323,7 @@ def EM_rating(index_name, data, factors):
 
 # Select the stocks
 def select_stocks(end_dates, current_date, index_name, index_dict, 
-                  period_hk, period_us, RS, NASDAQ_all, factors, backtest):
+                  period_hk, period_us, RS, HKEX_all, NASDAQ_all, factors, backtest):
     # Select period based on HK/US
     if index_name == "^HSI":
         period = period_hk
@@ -348,7 +348,7 @@ def select_stocks(end_dates, current_date, index_name, index_dict,
     # Iterate over all end dates
     for end_date in tqdm(end_dates):
         # Get the tickers of the stock market
-        tickers = stock_market(end_date, current_date, index_name, NASDAQ_all)
+        tickers = stock_market(end_date, current_date, index_name, HKEX_all, NASDAQ_all)
         
         # Get the price data of the index
         index_df = get_df(index_name, current_date)
@@ -475,8 +475,8 @@ def main():
             os.makedirs(folder)
     
     # Variables
-    HKEX_all = False
-    NASDAQ_all = True
+    HKEX_all = True
+    NASDAQ_all = False
     period_hk = 60 # Period for HK stocks
     period_us = 252 # Period for US stocks
     RS = 90
@@ -489,6 +489,7 @@ def main():
 
     # Get the current date
     current_date = get_current_date(start, index_name)
+    print(current_date)
 
     # Create the end dates
     end_dates = generate_end_dates(5, current_date)
@@ -497,7 +498,7 @@ def main():
 
     # Stock selection
     select_stocks(end_dates, current_date, index_name, index_dict, 
-                  period_hk, period_us, RS, NASDAQ_all, factors, backtest)
+                  period_hk, period_us, RS, HKEX_all, NASDAQ_all, factors, backtest)
 
     # Print the end time and total runtime
     end = dt.datetime.now()

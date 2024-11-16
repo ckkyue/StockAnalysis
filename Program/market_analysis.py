@@ -13,13 +13,20 @@ from technicals import *
 # pd.set_option("display.max_columns", None)
 
 # Screen the stocks from Excel file
-def screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving):
+def screen_excel(excel_filename, sector_excel_classification):
+    # Get the classified sectors
+    sectors_excel_leading = sector_excel_classification["Leading"]
+    sectors_excel_improving = sector_excel_classification["Improving"]
+    sectors_excel_weakening = sector_excel_classification["Weakening"]
+    sectors_excel_lagging = sector_excel_classification["Lagging"]
+
     # Load the workbook and select the active sheet
     workbook = openpyxl.load_workbook(excel_filename)
     sheet = workbook.active
 
     # Define the fill colour for highlighting
     yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+    red_fill = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
     orange_fill = PatternFill(start_color="FFA500", end_color="FFA500", fill_type="solid")
     red_font = Font(color="FF0000")
     green_font = Font(color="008000")
@@ -70,6 +77,8 @@ def screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
             # Highlight the stock if its sector matches
             if sector_cell.value in sectors_excel_leading + sectors_excel_improving:
                 sector_cell.fill = yellow_fill
+            elif sector_cell.value in sectors_excel_lagging + sectors_excel_weakening:
+                sector_cell.fill = red_fill
 
             # Change text colour to green if MVP
             if mvp_cell.value == "MVP":
@@ -193,43 +202,53 @@ def main():
         # Calculate the JdK RS-Ratio and Momentum
         index_df = get_JdK(index_names + sectors, index_df, current_date)
 
-        # Print the leading, weakening, improving and lagging sectors
-        sectors_leading = []
-        sectors_excel_leading = []
-        sectors_weakening = []
-        sectors_improving = []
-        sectors_excel_improving = []
-        sectors_lagging = []
+        # Initialize two empty dictionaries to store the classified sectors
+        sector_classification = {
+            "Leading": [],
+            "Weakening": [],
+            "Improving": [],
+            "Lagging": []
+        }
+
+        sector_excel_classification = {
+            "Leading": [],
+            "Weakening": [],
+            "Improving": [],
+            "Lagging": []
+        }
 
         # Iterate over all sectors
         for sector in sectors:
-            if index_df[f"{sector} JdK RS-Ratio"].iloc[-1] > 100:
-                if index_df[f"{sector} JdK RS-Momentum"].iloc[-1] > 100:
-                    sectors_leading.append(sector_dict[sector])
-                    sectors_excel_leading.append(sector_excel_dict[sector])
+            rs_ratio = index_df[f"{sector} JdK RS-Ratio"].iloc[-1]
+            rs_momentum = index_df[f"{sector} JdK RS-Momentum"].iloc[-1]
+
+            if rs_ratio >= 100:
+                if rs_momentum >= 100:
+                    sector_classification["Leading"].append(sector_dict[sector])
+                    sector_excel_classification["Leading"].append(sector_excel_dict[sector])
                 else:
-                    sectors_weakening.append(sector_dict[sector])
+                    sector_classification["Weakening"].append(sector_dict[sector])
+                    sector_excel_classification["Weakening"].append(sector_excel_dict[sector])
             else:
-                if index_df[f"{sector} JdK RS-Momentum"].iloc[-1] > 100:
-                    sectors_improving.append(sector_dict[sector])
-                    sectors_excel_improving.append(sector_excel_dict[sector])
+                if rs_momentum > 100:
+                    sector_classification["Improving"].append(sector_dict[sector])
+                    sector_excel_classification["Improving"].append(sector_excel_dict[sector])
                 else:
-                    sectors_lagging.append(sector_dict[sector])
+                    sector_classification["Lagging"].append(sector_dict[sector])
+                    sector_excel_classification["Lagging"].append(sector_excel_dict[sector])
 
         # Print the classified sectors
-        print(f"Leading sectors: {', '.join(sectors_leading)}")
-        print(f"Weakening sectors: {', '.join(sectors_weakening)}")
-        print(f"Improving sectors: {', '.join(sectors_improving)}")
-        print(f"Lagging sectors: {', '.join(sectors_lagging)}")
+        for category, sectors_list in sector_classification.items():
+            print(f"{category} sectors: {', '.join(sectors_list)}")
 
-    plot_all_jdk = False
-    if plot_all_jdk:
-        # Iterate over all sectors
-        for sector in sectors:
-            # Plot the JdK RS-Ratio and Momentum of the sector
-            plot_JdK(sector, sector_dict, index_df, save=True)
+        plot_all_jdk = False
+        if plot_all_jdk:
+            # Iterate over all sectors
+            for sector in sectors:
+                # Plot the JdK RS-Ratio and Momentum of the sector
+                plot_JdK(sector, sector_dict, index_df, save=True)
 
-    sector_selected = False
+    sector_selected = True
     if sector_selected:
         # Plot the relative rotation graph
         plot_rrg(sectors, sector_dict, index_df, "sector", save=True)
@@ -250,7 +269,7 @@ def main():
         excel_filename = get_excel_filename(current_date, "^GSPC", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)
 
         # Screen the stocks from Excel file
-        screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
+        screen_excel(excel_filename, sector_excel_classification)
 
     screen_hk = False
     if screen_hk:
@@ -258,7 +277,7 @@ def main():
         excel_filename = get_excel_filename(current_date, "^HSI", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)
 
         # Screen the stocks from Excel file
-        screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
+        screen_excel(excel_filename, sector_excel_classification)
 
     plot_marketbreadth = False
     if plot_marketbreadth:
@@ -278,7 +297,7 @@ def main():
         plot_close(index_name, index_df, MVP_VCP=False)
         plot_MFI_RSI(index_name, index_df, 252, save=True)
     
-    plot_vix = False
+    plot_vix = True
     if plot_vix:
         # Get the price data of CBOE Volatility Index (VIX)
         vix_df = get_df("^VIX", current_date)

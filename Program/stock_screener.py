@@ -375,10 +375,10 @@ def select_stocks(end_dates, current_date, index_name, index_dict,
             rs_df = rs_df[rs_df["RS"] >= RS]
             stocks = rs_df["Ticker"]
 
-        # Fetch the stock data and stock information in parallel
+        # Fetch the stock data in parallel
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            stock_data = {stock: data for stock, data in zip(stocks, executor.map(lambda stock: get_df(stock, end_date), stocks))}
-            stock_info_data = {stock: info for stock, info in zip(stocks, executor.map(get_stock_info, stocks))}
+            stock_data = {stock: data for stock, data in tqdm(zip(stocks, executor.map(lambda stock: get_df(stock, end_date), stocks)), desc="Fetching stock price")}
+        stock_info_data = {stock: get_stock_info(stock) for stock in tqdm(stocks, desc="Fetching stock info")}
 
         # Process each stock and create an export list
         export_data = [process_stock(stock, index_name, end_date, current_date, stock_data, stock_info_data, rs_volume_df, backtest=backtest) for stock in tqdm(stocks)]

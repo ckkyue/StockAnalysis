@@ -178,7 +178,7 @@ def main():
     # Get the price data of the index
     index_df = get_df(index_name, current_date)
 
-    plot_all = True
+    plot_all = False
     if plot_all:
         # Iterate over all indices and sectors
         for ticker in index_names + sectors:
@@ -222,14 +222,14 @@ def main():
         print(f"Improving sectors: {', '.join(sectors_improving)}")
         print(f"Lagging sectors: {', '.join(sectors_lagging)}")
 
-    plot_all_jdk = True
+    plot_all_jdk = False
     if plot_all_jdk:
         # Iterate over all sectors
         for sector in sectors:
             # Plot the JdK RS-Ratio and Momentum of the sector
             plot_JdK(sector, sector_dict, index_df, save=True)
 
-    sector_selected = True
+    sector_selected = False
     if sector_selected:
         # Plot the relative rotation graph
         plot_rrg(sectors, sector_dict, index_df, "sector", save=True)
@@ -260,7 +260,7 @@ def main():
         # Screen the stocks from Excel file
         screen_excel(excel_filename, sectors_excel_leading, sectors_excel_improving)
 
-    plot_marketbreadth = True
+    plot_marketbreadth = False
     if plot_marketbreadth:
         # Get the list of tickers of stock market
         index_df = get_df(index_name, current_date)
@@ -278,7 +278,7 @@ def main():
         plot_close(index_name, index_df, MVP_VCP=False)
         plot_MFI_RSI(index_name, index_df, 252, save=True)
     
-    plot_vix = True
+    plot_vix = False
     if plot_vix:
         # Get the price data of CBOE Volatility Index (VIX)
         vix_df = get_df("^VIX", current_date)

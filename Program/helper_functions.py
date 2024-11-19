@@ -134,6 +134,16 @@ def get_df(stock, end_date, interval="1d", redownload=False, save=True):
     if not os.path.isfile(filename) or redownload:
         df = yf.download(stock, start=csv_date, end=end_date, interval=interval)
         if not df.empty:
+            df.columns = df.columns.droplevel(1)
+            if interval == "1d":
+                df.index = df.index.date
+                df["Date"] = pd.to_datetime(df.index)
+                df.set_index("Date", inplace=True)
+                
+            else:
+                df["Datetime"] = pd.to_datetime(df.index, utc=True)
+                df.set_index("Datetime", inplace=True)
+
             # Remove the old file for the maximum date
             if max_date != "N/A":
                 if max_date < end_date:
@@ -142,7 +152,7 @@ def get_df(stock, end_date, interval="1d", redownload=False, save=True):
             if save:
                 df.to_csv(filename)
                 df = pd.read_csv(filename)
-                
+
             else:
                 return df
                     
@@ -157,14 +167,15 @@ def get_df(stock, end_date, interval="1d", redownload=False, save=True):
     # Read the most updated data
     else:
         df = pd.read_csv(filename)
-    
+
     if interval == "1d":
         df["Date"] = pd.to_datetime(df["Date"])
         df.set_index("Date", inplace=True)
+        
     else:
         df["Datetime"] = pd.to_datetime(df["Datetime"], utc=True)
         df.set_index("Datetime", inplace=True)
-
+        
     return df
 
 # Get the 5-min volume data

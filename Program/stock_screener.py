@@ -14,12 +14,12 @@ from tqdm import tqdm
 import yfinance as yf
 
 # Calculate the stop loss and target price of a stock
-def stoploss_target(stock, entry, end_date, period=5, max_stoploss=0.08, atr_buffer=0.5, rr=2):
+def stoploss_target(stock, entry, entry_date, period=5, max_stoploss=0.08, atr_buffer=0.5, rr=2):
     # Get the price data of the stock
-    df = get_df(stock, end_date)
+    df = get_df(stock, entry_date)
 
     # Filter the data
-    df = df[df.index <= end_date]
+    df = df[df.index <= entry_date]
 
     # Calculate the minimum lowest price over the past period
     low_min = df["Low"].rolling(window=period).min().iloc[-1]

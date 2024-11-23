@@ -241,12 +241,12 @@ def main():
         for category, sectors_list in sector_classification.items():
             print(f"{category} sectors: {', '.join(sectors_list)}")
 
-        plot_all_jdk = False
-        if plot_all_jdk:
-            # Iterate over all sectors
-            for sector in sectors:
-                # Plot the JdK RS-Ratio and Momentum of the sector
-                plot_JdK(sector, sector_dict, index_df, save=True)
+    plot_all_jdk = True
+    if plot_all_jdk:
+        # Iterate over all sectors
+        for sector in sectors:
+            # Plot the JdK RS-Ratio and Momentum of the sector
+            plot_JdK(sector, sector_dict, index_df, save=True)
 
     sector_selected = True
     if sector_selected:
@@ -263,7 +263,7 @@ def main():
 
         retracement_excel(excel_filename, current_date)
 
-    screen_us = True
+    screen_us = False
     if screen_us:
         # Get the Excel filename
         excel_filename = get_excel_filename(current_date, "^GSPC", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)
@@ -279,7 +279,7 @@ def main():
         # Screen the stocks from Excel file
         screen_excel(excel_filename, sector_excel_classification)
 
-    plot_marketbreadth = False
+    plot_marketbreadth = True
     if plot_marketbreadth:
         # Get the list of tickers of stock market
         index_df = get_df(index_name, current_date)

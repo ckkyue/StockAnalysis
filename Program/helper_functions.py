@@ -6,6 +6,7 @@ import pandas as pd
 from pandas_datareader import data as pdr
 import os
 from scipy.stats import linregress
+import time
 from yahoo_fin import stock_info as si
 import yfinance as yf
 
@@ -177,6 +178,17 @@ def get_df(stock, end_date, interval="1d", redownload=False, save=True):
         df.set_index("Datetime", inplace=True)
         
     return df
+
+# Get the information of a stock from yfinance
+def get_stock_info(stock):
+    try:
+        time.sleep(0.5)
+        return yf.Ticker(stock).info
+    
+    except Exception as e:
+        print((f"Error for get_stock_info {stock}: {e}\n"))
+
+        return None
 
 # Get the 5-min volume data
 def get_volume5m_df(df, date, period=50):

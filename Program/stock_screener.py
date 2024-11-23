@@ -3,7 +3,7 @@ import ast
 import concurrent.futures
 import datetime as dt
 from fundamentals import *
-from helper_functions import get_current_date, generate_end_dates, get_currency, get_df, get_earning_dates, get_excel_filename, get_infix, get_rs_volume, slope_reg, stock_market
+from helper_functions import get_current_date, generate_end_dates, get_currency, get_df, get_earning_dates, get_excel_filename, get_infix, get_rs_volume, get_stock_info, slope_reg, stock_market
 import numpy as np
 import pandas as pd
 from pandas import ExcelWriter as EW
@@ -46,16 +46,6 @@ def stoploss_target(stock, entry, entry_date, period=5, max_stoploss=0.08, atr_b
     target_pct = round(target_pct, 1)
     
     return stoploss, stoploss_pct, target, target_pct
-
-# Get the information of a stock from yfinance
-def get_stock_info(stock):
-    try:
-        return yf.Ticker(stock).info
-    
-    except Exception as e:
-        print((f"Error for get_stock_info {stock}: {e}\n"))
-
-        return None
     
 # Define a function to choose between SMA and EMA
 def EMA_replace(SMA_value, EMA_value):

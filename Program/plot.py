@@ -1014,7 +1014,7 @@ def plot_ndays_return(stock, df, n, save=False):
     plt.ylabel("Count")
 
     # Set y-ticks to only show integers
-    plt.yticks(np.arange(0, int(max(counts)) + 1, 1))
+    plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
 
     # Save the plot
     if save:

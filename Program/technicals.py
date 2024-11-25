@@ -336,25 +336,28 @@ def CCI(data, period=20):
     return data
 
 # Calculate the Average Directional Index (ADX)
-def ADX(data, period=40, column="Close"):
+def ADX(data, period=14):
     data_copy = data.copy()
 
-    # Calculate the change of the stock
-    data_copy["Change"] = data_copy[column].diff()
+    # Calculate the ATR
+    data_copy = ATR(data_copy, period=period)
 
-    # Calculate the +DI and -DI
-    data_copy["+DI"] = np.where(data_copy["Change"] > 0, data_copy["Change"], 0)
-    data_copy["-DI"] = np.where(data_copy["Change"] < 0, abs(data_copy["Change"]), 0)
+    # Calculate +DM and -DM
+    data_copy["+DM"] = np.where((data_copy["High"] - data_copy["High"].shift()) > np.maximum((data_copy["Low"].shift() - data_copy["Low"]), 0), 
+                                data_copy["High"] - data_copy["High"].shift(), 0)
+    
+    data_copy["-DM"] = np.where((data_copy["Low"].shift() - data_copy["Low"]) > np.maximum((data_copy["High"] - data_copy["High"].shift()), 0), 
+                                data_copy["Low"].shift() - data_copy["Low"], 0)
 
-    # Calculate the EMA of +DI and -DI
-    data_copy["+DI EMA"] = EMA(data_copy, period, column="+DI")
-    data_copy["-DI EMA"] = EMA(data_copy, period, column="-DI")
+    # Calculate the +DI and -DI by EMA of +DM and -DM
+    data_copy["+DI"] = EMA(data_copy, period, column="+DM")
+    data_copy["-DI"] = EMA(data_copy, period, column="-DM")
 
-    # Calculate the percentage difference between the mean of +DI and -DI
-    data_copy["DI Percent Difference"] = np.abs(data_copy["+DI EMA"] - data_copy["-DI EMA"]) / (data_copy["+DI EMA"] + data_copy["-DI EMA"]) * 100
+    # Calculate the DX
+    data_copy["DX"] = (np.abs(data_copy["+DI"] - data_copy["-DI"]) / (data_copy["+DI"] + data_copy["-DI"])) * 100
 
     # Calculate the ADX
-    data["ADX"] = data_copy["DI Percent Difference"].rolling(window=period).mean()
+    data["ADX"] = EMA(data_copy, period, column="DX")
 
     return data
 
@@ -636,3 +639,30 @@ def check_bgu(df):
     volume_bgu = 1.5 * volume_sma50
 
     return round(price_bgu, 2), round(volume_bgu, 2)
+
+# Filter out the outlier of the dataframe
+def filter_df_outlier(df, column, zscore):
+    # Extract the column
+    arr = df[column].dropna()
+
+    # Calculate the mean, SD
+    mean = np.mean(arr)
+    sd = np.std(arr)
+
+    # Filter the dataframe
+    df_filter = df[df[column] >= mean + zscore * sd]
+
+    return df_filter
+
+# Calculate the n days return
+def calculate_ndays_return(df, ns):
+    # Ensure ns is a list
+    if isinstance(ns, int):
+        ns = [ns]
+        
+    # Iterate over all ns
+    for n in ns:
+        df[f"Close {n} Later"] = df["Close"].shift(- n)
+        df[f"{n} Days Return (%)"] = ((df[f"Close {n} Later"] / df["Close"]) - 1) * 100
+
+    return df

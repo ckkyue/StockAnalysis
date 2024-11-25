@@ -8,7 +8,7 @@ import numpy as np
 import os
 import pandas as pd
 from scipy.signal import argrelextrema
-from scipy.stats import linregress
+from scipy.stats import norm, kurtosis, linregress
 import seaborn as sns
 from statsmodels.tsa.stattools import acf
 from technicals import *
@@ -957,6 +957,68 @@ def plot_volume5m(stock, volume5m_data, date, period=50, save=False):
     # Save the plot
     if save:
         plt.savefig(f"Result/Figure/5minvol{stock}_{date}.png", dpi=300)
+
+    # Show the plot
+    plt.show()
+
+# Plot the n days return
+def plot_ndays_return(stock, df, n, save=False):
+    # Extract the array
+    arr = df[f"{n} Days Return (%)"]
+
+    # Create a figure
+    plt.figure(figsize=(10, 6))
+
+    # Plot histogram with counts
+    counts, bins, _ = plt.hist(arr, bins=100, color="blue", edgecolor="black", alpha=0.7)
+
+
+    # Fit Gaussian curve
+    mean = np.mean(arr)
+    sd = np.std(arr)
+    xmin = np.min(arr)
+    xmax = np.max(arr)
+    x = np.linspace(xmin, xmax, 10000)
+    p = norm.pdf(x, mean, sd)
+
+    # Scale Gaussian curve to match histogram counts
+    bin_width = bins[1] - bins[0]
+    scaling_factor = len(arr) * bin_width
+    p = p * scaling_factor
+
+    # Plot scaled Gaussian curve
+    plt.plot(x, p, color="red")
+
+    # Add a dotted line for the mean value
+    plt.axvline(mean, color="black", linestyle="dotted")
+    
+    # Calculate the minimum and maximum z-score
+    zscore_min = np.ceil((mean - xmin) / sd)
+    zscore_max = np.ceil((xmax - mean) / sd)
+
+    # Add dotted lines for standard deviations
+    for i in range(1, int(zscore_min)):
+        plt.axvline(mean - i * sd, color="red", linestyle="dotted")
+    for i in range(1, int(zscore_max)):
+        plt.axvline(mean + i * sd, color="red", linestyle="dotted")
+
+    # Calculate the kurtosis
+    kurt_value = kurtosis(arr)
+
+    # Add mean and kurtosis to the plot
+    plt.text(0.95, 0.95, f"Mean: {mean:.4f}\nKurtosis: {kurt_value:.2f}", ha="right", va="top", transform=plt.gca().transAxes)
+
+    # Set title and labels
+    plt.title(f"Distribution of {n} Days Return of {stock}")
+    plt.xlabel(f"{n} Days Return (%)")
+    plt.ylabel("Count")
+
+    # Set y-ticks to only show integers
+    plt.yticks(np.arange(0, int(max(counts)) + 1, 1))
+
+    # Save the plot
+    if save:
+        plt.savefig(f"Result/Figure/{n}daysreturn{stock}.png", dpi=300)
 
     # Show the plot
     plt.show()

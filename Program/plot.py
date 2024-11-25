@@ -695,9 +695,7 @@ def plot_corr_stocks(stocks, end_date, years):
     # Filter the data
     show = int(years * 252)
     df_merged = df_merged[- show:]
-    dfs_close = [df_merged["Close"].values]
-    for i in range(1, len(stocks)):
-        dfs_close.append(df_merged[f"Close ({stocks[i]})"].values)
+    dfs_close = [df_merged[f"Close ({stock})"].values for stock in stocks]
 
     # Create the data with the aligned values
     data = np.array(dfs_close)

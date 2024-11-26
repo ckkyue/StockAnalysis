@@ -1011,7 +1011,7 @@ def plot_ndays_return(stock, df, n, save=False):
     # Set title and labels
     if n == 1:
         plt.title(f"Daily Percent Change of {stock}")
-        plt.xlabel("Daily Percent Change (%)")
+        plt.xlabel("Distribution of Daily Percent Change (%)")
     else:
         plt.title(f"Distribution of {n} Days Return of {stock}")
         plt.xlabel(f"{n} Days Return (%)")

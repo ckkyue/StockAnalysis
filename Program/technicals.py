@@ -642,6 +642,9 @@ def check_bgu(df):
 
 # Filter out the outlier of the dataframe
 def filter_df_outlier(df, column, zscore):
+    # Drop the rows with NaN values
+    df = df.dropna()
+    
     # Extract the column
     arr = df[column].dropna()
 
@@ -650,9 +653,10 @@ def filter_df_outlier(df, column, zscore):
     sd = np.std(arr)
 
     # Filter the dataframe
-    df_filter = df[df[column] >= mean + zscore * sd]
+    df_inlier = df[df[column] < mean + zscore * sd]
+    df_outlier = df[df[column] >= mean + zscore * sd]
 
-    return df_filter
+    return df_inlier, df_outlier
 
 # Calculate the n days return
 def calculate_ndays_return(df, ns):

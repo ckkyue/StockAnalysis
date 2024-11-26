@@ -1004,11 +1004,17 @@ def plot_ndays_return(stock, df, n, save=False):
     kurt_value = kurtosis(arr)
 
     # Add mean and kurtosis to the plot
-    plt.text(0.95, 0.95, f"Mean: {mean:.4f}\nKurtosis: {kurt_value:.2f}", ha="right", va="top", transform=plt.gca().transAxes)
+    plt.text(0.95, 0.95, f"Mean: {mean:.4f}\nKurtosis: {kurt_value:.2f}", 
+             ha="right", va="top", transform=plt.gca().transAxes, 
+             bbox={'facecolor': 'white', 'alpha': 0.8, 'pad': 5})
 
     # Set title and labels
-    plt.title(f"Distribution of {n} Days Return of {stock}")
-    plt.xlabel(f"{n} Days Return (%)")
+    if n == 1:
+        plt.title(f"Daily Percent Change of {stock}")
+        plt.xlabel("Daily Percent Change (%)")
+    else:
+        plt.title(f"Distribution of {n} Days Return of {stock}")
+        plt.xlabel(f"{n} Days Return (%)")
     plt.ylabel("Count")
 
     # Set y-ticks to only show integers

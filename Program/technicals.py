@@ -296,7 +296,7 @@ def RMI(data, period=20, momentum=3, column="Close"):
     return data
 
 # Calculate the Money Flow Index (MFI)
-def MFI(data, period=14, column="Close"):
+def MFI(data, period=14):
     data_copy = data.copy()
 
     # Calculate HLC3, Raw MF, and the change of HLC3

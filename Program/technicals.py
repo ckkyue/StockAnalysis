@@ -642,9 +642,6 @@ def check_bgu(df):
 
 # Filter out the outlier of the dataframe
 def filter_df_outlier(df, column, zscore):
-    # Drop the rows with NaN values
-    df = df.dropna()
-    
     # Extract the column
     arr = df[column].dropna()
 

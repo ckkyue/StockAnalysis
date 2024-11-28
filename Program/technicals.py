@@ -650,8 +650,9 @@ def filter_df_outlier(df, column, zscore):
     sd = np.std(arr)
 
     # Filter the dataframe
-    df_inlier = df[df[column] < mean + zscore * sd]
-    df_outlier = df[df[column] >= mean + zscore * sd]
+    df[f"{column} Z-Score"] = (df[column] - mean) / sd
+    df_inlier = df[df[f"{column} Z-Score"] < zscore]
+    df_outlier = df[df[f"{column} Z-Score"] >= zscore]
 
     return df_inlier, df_outlier
 

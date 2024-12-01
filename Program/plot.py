@@ -223,6 +223,7 @@ def plot_ADX(stock, df, period=252, show=252, save=False):
     # Plot the ADX Z-Score on the third subplot
     ax3.plot(df["ADX Z-Score"], label="ADX Z-Score", color="orange")
     ax3.axhline(y=2, linestyle="dotted", color="red")
+    ax3.axhline(y=0, linestyle="dotted", color="black")
     ax3.axhline(y=-2, linestyle="dotted", color="red")
 
     # Set the y label of the third subplot
@@ -286,6 +287,7 @@ def plot_volatility(stock, df, period=252, show=120, save=False):
     # Plot the range SMA 14 ratio z-score on the second subplot
     ax2.plot(df["Range/SMA14 Z-Score"])
     ax2.axhline(y=2, linestyle="dotted", label="Expansion", color="red")
+    ax2.axhline(y=0, linestyle="dotted", color="black")
     ax2.axhline(y=-2, linestyle="dotted", label="Contraction", color="green")
 
     # Set the y label of the second subplot
@@ -294,6 +296,7 @@ def plot_volatility(stock, df, period=252, show=120, save=False):
     # Plot the volume SMA 50 ratio z-score on the third subplot
     ax3.plot(df["Vol/SMA50 Z-Score"])
     ax3.axhline(y=2, linestyle="dotted", label="Expansion", color="red")
+    ax3.axhline(y=0, linestyle="dotted", color="black")
     ax3.axhline(y=-2, linestyle="dotted", label="Contraction", color="green")
 
     # Set the y label of the third subplot
@@ -302,6 +305,7 @@ def plot_volatility(stock, df, period=252, show=120, save=False):
     # Plot the z-score of the product of range SMA 14 ratio and volume SMA 50 ratio
     ax4.plot(df["Range/SMA14 * Vol/SMA50 Z-Score"])
     ax4.axhline(y=2, linestyle="dotted", label="Expansion", color="red")
+    ax4.axhline(y=0, linestyle="dotted", color="black")
     ax4.axhline(y=-2, linestyle="dotted", label="Contraction", color="green")
 
     # Set the y label of the fourth subplot

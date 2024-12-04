@@ -641,7 +641,7 @@ def check_bgu(df):
     return round(price_bgu, 2), round(volume_bgu, 2)
 
 # Filter out the outlier of the dataframe
-def filter_df_outlier(df, column, zscore):
+def filter_df_outlier(df, column, zscore, greater=True):
     # Extract the column
     arr = df[column].dropna()
 
@@ -651,8 +651,12 @@ def filter_df_outlier(df, column, zscore):
 
     # Filter the dataframe
     df[f"{column} Z-Score"] = (df[column] - mean) / sd
-    df_inlier = df[df[f"{column} Z-Score"] < zscore]
-    df_outlier = df[df[f"{column} Z-Score"] >= zscore]
+    if greater:
+        df_inlier = df[df[f"{column} Z-Score"] < zscore]
+        df_outlier = df[df[f"{column} Z-Score"] >= zscore]
+    else:
+        df_inlier = df[df[f"{column} Z-Score"] > zscore]
+        df_outlier = df[df[f"{column} Z-Score"] <= zscore]
 
     return df_inlier, df_outlier
 

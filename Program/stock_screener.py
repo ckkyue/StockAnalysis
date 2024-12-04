@@ -52,15 +52,47 @@ def EMA_replace(SMA_value, EMA_value):
     return EMA_value if np.isnan(SMA_value) else SMA_value
 
 # Check if the price data fulfills the technical conditions
-def check_conds_tech(index_name, current_close, SMA_20, SMA_20_slope, SMA_50, SMA_50_slope, SMA_200, SMA_200_slope, EMA_20, EMA_20_slope, EMA_50, EMA_50_slope, EMA_200, EMA_200_slope, Low, High):
+def check_conds_tech(index_name, df):
+    # Current closing price
+    current_close = df["Close"].iloc[-1]
+
+    # Calculate the moving averages
+    periods = [5, 20, 50, 200]
+
+    for i in periods:
+        df[f"SMA {str(i)}"] = SMA(df, i)
+        df[f"EMA {str(i)}"] = EMA(df, i)
+
+    # Calculate the moving averages
+    SMA_5 = df["SMA 5"].iloc[-1]
+    SMA_20 = df["SMA 20"].iloc[-1]
+    SMA_50 = df["SMA 50"].iloc[-1]
+    SMA_200 = df["SMA 200"].iloc[-1]
+    SMA_20_slope = df["SMA 20"].diff().iloc[-1]
+    SMA_50_slope = df["SMA 50"].diff().iloc[-1]
+    SMA_200_slope = df["SMA 200"].diff().iloc[-1]
+    EMA_5 = df["EMA 5"].iloc[-1]
+    EMA_20 = df["EMA 20"].iloc[-1]
+    EMA_50 = df["EMA 50"].iloc[-1]
+    EMA_200 = df["EMA 200"].iloc[-1]
+    EMA_20_slope = df["EMA 20"].diff().iloc[-1]
+    EMA_50_slope = df["EMA 50"].diff().iloc[-1]
+    EMA_200_slope = df["EMA 200"].diff().iloc[-1]
+
+    # 52 week Low
+    Low = round(min(df["Low"][-252:]), 2)
+
+    # 52 week High
+    High = round(max(df["High"][-252:]), 2)
+
     # Technicals
     if index_name == "^HSI":
         cond_t1 = current_close > EMA_replace(SMA_20, EMA_20) > EMA_replace(SMA_50, EMA_50)
         cond_t2 = current_close > EMA_replace(SMA_200, EMA_200)
         cond_t3 = EMA_replace(SMA_20_slope, EMA_20_slope) > 0
         conds_tech = cond_t1 and cond_t2 and cond_t3
-        
-        return conds_tech, cond_t1, cond_t2, cond_t3
+        cond_t4 = None
+        cond_t5 = None
 
     else:
         cond_t1 = current_close > EMA_replace(SMA_50, EMA_50) > EMA_replace(SMA_200, EMA_200)
@@ -70,7 +102,27 @@ def check_conds_tech(index_name, current_close, SMA_20, SMA_20_slope, SMA_50, SM
         cond_t5 = current_close >= (0.75 * High)
         conds_tech = cond_t1 and cond_t2 and cond_t3 and cond_t4 and cond_t5
 
-        return conds_tech, cond_t1, cond_t2, cond_t3, cond_t4, cond_t5
+    conds_tech_data = {
+        "conds_tech": conds_tech,
+        "cond_t1": cond_t1,
+        "cond_t2": cond_t2,
+        "cond_t3": cond_t3,
+        "cond_t4": cond_t4,
+        "cond_t5": cond_t5,
+        "current_close": current_close,
+        "SMA 5": SMA_5,
+        "EMA 5": EMA_5,
+        "SMA 20": SMA_20,
+        "EMA 20": EMA_20,
+        "SMA 50": SMA_50,
+        "EMA 50": EMA_50,
+        "SMA 200": SMA_200,
+        "EMA 200": EMA_200,
+        "Low": Low,
+        "High": High
+    }
+    
+    return conds_tech_data
     
 # Check if the stock fulfills the fundamental conditions
 def check_conds_fund(Y_growth, Q_growth, ROE):
@@ -105,47 +157,37 @@ def process_stock(stock, index_name, end_date, current_date, stock_data, stock_i
         # Filter the data
         df = df[df.index <= end_date]
 
-        # Current closing price
-        current_close = df["Close"].iloc[-1]
-
-        # Calculate the moving averages
-        periods = [5, 20, 50, 200]
-
-        for i in periods:
-            df[f"SMA {str(i)}"] = SMA(df, i)
-            df[f"EMA {str(i)}"] = EMA(df, i)
-
-        # Calculate the moving averages
-        SMA_5 = df["SMA 5"].iloc[-1]
-        SMA_20 = df["SMA 20"].iloc[-1]
-        SMA_50 = df["SMA 50"].iloc[-1]
-        SMA_200 = df["SMA 200"].iloc[-1]
-        SMA_20_slope = df["SMA 20"].diff().iloc[-1]
-        SMA_50_slope = df["SMA 50"].diff().iloc[-1]
-        SMA_200_slope = df["SMA 200"].diff().iloc[-1]
-        EMA_5 = df["EMA 5"].iloc[-1]
-        EMA_20 = df["EMA 20"].iloc[-1]
-        EMA_50 = df["EMA 50"].iloc[-1]
-        EMA_200 = df["EMA 200"].iloc[-1]
-        EMA_20_slope = df["EMA 20"].diff().iloc[-1]
-        EMA_50_slope = df["EMA 50"].diff().iloc[-1]
-        EMA_200_slope = df["EMA 200"].diff().iloc[-1]
-
-        # 52 week Low
-        Low = round(min(df["Low"][-252:]), 2)
-
-        # 52 week High
-        High = round(max(df["High"][-252:]), 2)
-
         # RS rating and volume SMA 5 rank
         RS_rating, volume_sma5_rank = get_rs_volume(stock, rs_volume_df)
 
         # Check the Minervini conditions
         # Technicals
+        conds_tech_data = check_conds_tech(index_name, df)
+
+        # Extract relevant technical data
+        conds_tech = conds_tech_data["conds_tech"]
+        current_close = conds_tech_data["current_close"]
+        SMA_5 = conds_tech_data["SMA 5"]
+        EMA_5 = conds_tech_data["EMA 5"]
+        SMA_20 = conds_tech_data["SMA 20"]
+        EMA_20 = conds_tech_data["EMA 20"]
+        SMA_50 = conds_tech_data["SMA 50"]
+        EMA_50 = conds_tech_data["EMA 50"]
+        SMA_200 = conds_tech_data["SMA 200"]
+        EMA_200 = conds_tech_data["EMA 200"]
+        Low = conds_tech_data["Low"]
+        High = conds_tech_data["High"]
+
         if index_name == "^HSI":
-            conds_tech, cond_t1, cond_t2, cond_t3 = check_conds_tech(index_name, current_close, SMA_20, SMA_20_slope, SMA_50, SMA_50_slope, SMA_200, SMA_200_slope, EMA_20, EMA_20_slope, EMA_50, EMA_50_slope, EMA_200, EMA_200_slope, Low, High)
+            cond_t1 = conds_tech_data["conds_t1"]
+            cond_t2 = conds_tech_data["conds_t2"]
+            cond_t3 = conds_tech_data["conds_t3"]
         else:
-            conds_tech, cond_t1, cond_t2, cond_t3, cond_t4, cond_t5 = check_conds_tech(index_name, current_close, SMA_20, SMA_20_slope, SMA_50, SMA_50_slope, SMA_200, SMA_200_slope, EMA_20, EMA_20_slope, EMA_50, EMA_50_slope, EMA_200, EMA_200_slope, Low, High)
+            cond_t1 = conds_tech_data["conds_t1"]
+            cond_t2 = conds_tech_data["conds_t2"]
+            cond_t3 = conds_tech_data["conds_t3"]
+            cond_t4 = conds_tech_data["conds_t4"]
+            cond_t5 = conds_tech_data["conds_t5"]
 
         # Preprocess stock information
         if conds_tech:

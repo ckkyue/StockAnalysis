@@ -113,11 +113,17 @@ def check_conds_tech(index_name, df):
         "SMA 5": SMA_5,
         "EMA 5": EMA_5,
         "SMA 20": SMA_20,
+        "SMA 20 slope": SMA_20_slope,
         "EMA 20": EMA_20,
+        "EMA 20 slope": EMA_20_slope,
         "SMA 50": SMA_50,
+        "SMA 50 slope": SMA_50_slope,
         "EMA 50": EMA_50,
+        "EMA 50 slope": EMA_50_slope,
         "SMA 200": SMA_200,
+        "SMA 200 slope": SMA_200_slope,
         "EMA 200": EMA_200,
+        "EMA 200 slope": EMA_200_slope,
         "Low": Low,
         "High": High
     }

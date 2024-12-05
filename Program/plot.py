@@ -966,7 +966,7 @@ def plot_volume5m(stock, volume5m_data, date, period=50, save=False):
     plt.show()
 
 # Plot the n days return
-def plot_ndays_return(stock, df, n, save=False):
+def plot_ndays_return(stock, df, n, infix="", save=False):
     # Extract the array
     arr = df[f"{n} Days Return (%)"]
 
@@ -1026,9 +1026,12 @@ def plot_ndays_return(stock, df, n, save=False):
     # Set y-ticks to only show integers
     plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
 
+    # Adjust the spacing
+    plt.tight_layout()
+
     # Save the plot
     if save:
-        plt.savefig(f"Result/Figure/{n}daysreturn{stock}.png", dpi=300)
+        plt.savefig(f"Result/Figure/{n}daysreturn{infix}{stock}.png", dpi=300)
 
     # Show the plot
     plt.show()

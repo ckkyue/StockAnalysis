@@ -320,11 +320,9 @@ def stock_market(end_date, current_date, index_name, HKEX_all, NASDAQ_all):
         tickers = [str(ticker).replace(".", "-").replace("^", "-P").replace("/", "-") for ticker in tickers]
         tickers.sort()
 
-    # NASDAQ and NYSE (NASDAQ_all)
+    # NASDAQ
     elif NASDAQ_all and index_name == "^GSPC":
-        tickers_nasdaq = pd.read_csv("Program/nasdaq.csv")
-        tickers_nyse = pd.read_csv("Program/nyse.csv")
-        tickers_table = pd.concat([tickers_nasdaq, tickers_nyse]).drop_duplicates(subset="Symbol", keep="first")
+        tickers_table = pd.read_csv("Program/nasdaq.csv")
         tickers = tickers_table["Symbol"].tolist()
         tickers = [str(ticker).replace(".", "-").replace("^", "-P").replace("/", "-") for ticker in tickers]
         tickers.sort()

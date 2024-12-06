@@ -154,7 +154,7 @@ def plot_MFI_RSI(stock, df, period=252, show=252, save=False):
     ax2.plot(df["RSI"], label="RSI", color="green", alpha=0.7)
     ax2.axhline(y=20, linestyle="dotted", label="Oversold/Overbought", color="red")
     ax2.axhline(y=50, linestyle="dotted", color="black")
-    ax2.axhline(y=80, linestyle="dotted", label="Overbought", color="red")
+    ax2.axhline(y=80, linestyle="dotted", color="red")
 
     # Set the y label of the second subplot
     ax2.set_ylabel(f"MFI/RSI")
@@ -162,8 +162,9 @@ def plot_MFI_RSI(stock, df, period=252, show=252, save=False):
     # Plot the MFI/RSI Z-Score on the third subplot
     ax3.plot(df["MFI Z-Score"], label="MFI Z-Score", color="orange", alpha=0.7)
     ax3.plot(df["RSI Z-Score"], label="RSI Z-Score", color="green", alpha=0.7)
+    ax3.axhline(y=2, linestyle="dotted", color="red")
     ax3.axhline(y=0, linestyle="dotted", color="black")
-    ax3.axhline(y=-2, linestyle="dotted", label="Overbought", color="red")
+    ax3.axhline(y=-2, linestyle="dotted", color="red")
 
     # Set the y label of the third subplot
     ax3.set_ylabel(f"MFI/RSI Z-Score")

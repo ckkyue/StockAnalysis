@@ -185,15 +185,15 @@ def process_stock(stock, index_name, end_date, current_date, stock_data, stock_i
         High = conds_tech_data["High"]
 
         if index_name == "^HSI":
-            cond_t1 = conds_tech_data["conds_t1"]
-            cond_t2 = conds_tech_data["conds_t2"]
-            cond_t3 = conds_tech_data["conds_t3"]
+            cond_t1 = conds_tech_data["cond_t1"]
+            cond_t2 = conds_tech_data["cond_t2"]
+            cond_t3 = conds_tech_data["cond_t3"]
         else:
-            cond_t1 = conds_tech_data["conds_t1"]
-            cond_t2 = conds_tech_data["conds_t2"]
-            cond_t3 = conds_tech_data["conds_t3"]
-            cond_t4 = conds_tech_data["conds_t4"]
-            cond_t5 = conds_tech_data["conds_t5"]
+            cond_t1 = conds_tech_data["cond_t1"]
+            cond_t2 = conds_tech_data["cond_t2"]
+            cond_t3 = conds_tech_data["cond_t3"]
+            cond_t4 = conds_tech_data["cond_t4"]
+            cond_t5 = conds_tech_data["cond_t5"]
 
         # Preprocess stock information
         if conds_tech:

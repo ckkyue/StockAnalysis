@@ -17,7 +17,7 @@ import yfinance as yf
 def stoploss_target(stock, entry, entry_date, period=5, max_stoploss=0.08, atr_buffer=0.5, rr=2):
     # Get the price data of the stock
     df = get_df(stock, entry_date)
-
+    
     # Filter the data
     df = df[df.index <= entry_date]
 
@@ -514,7 +514,7 @@ def main():
     
     # Variables
     HKEX_all = True
-    NASDAQ_all = False
+    NASDAQ_all = True
     period_hk = 60 # Period for HK stocks
     period_us = 252 # Period for US stocks
     RS = 90

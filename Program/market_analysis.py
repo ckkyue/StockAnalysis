@@ -263,7 +263,7 @@ def main():
 
         retracement_excel(excel_filename, current_date)
 
-    screen_us = False
+    screen_us = True
     if screen_us:
         # Get the Excel filename
         excel_filename = get_excel_filename(current_date, "^GSPC", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)

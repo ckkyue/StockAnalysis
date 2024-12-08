@@ -272,8 +272,8 @@ def stock_market(end_date, current_date, index_name, HKEX_all, NASDAQ_all):
         if HKEX_all:
             hkex_df = pd.read_excel("Program/ListOfSecurities.xlsx", skiprows=2)
             hkex_df = hkex_df[hkex_df["Category"] == "Equity"]
-            stocks = hkex_df["Stock Code"].tolist()
-            tickers = [str(int(stock)).zfill(4) + '.HK' for stock in stocks]
+            tickers = hkex_df["Stock Code"].tolist()
+            tickers = [str(int(ticker)).zfill(4) + '.HK' for ticker in tickers]
         else:
             hsi_df = pd.read_csv("Program/constituents-hsi.csv")
             tickers = hsi_df["Symbol"].tolist()
@@ -333,10 +333,10 @@ def get_currency(index_name):
 
     return currency
 
-# Find the RS rating and volume SMA 5 rank of a ticker
-def get_rs_volume(ticker, rs_volume_df):
-    if ticker in rs_volume_df["Ticker"].values:
-        row = rs_volume_df.loc[rs_volume_df["Ticker"] == ticker]
+# Find the RS rating and volume SMA 5 rank of a stock
+def get_rs_volume(stock, rs_volume_df):
+    if stock in rs_volume_df["Stock"].values:
+        row = rs_volume_df.loc[rs_volume_df["Stock"] == stock]
         rs = row["RS"].iloc[0]
         volume_sma5_rank = row["Volume SMA 5 Rank"].iloc[0]
 

@@ -23,7 +23,7 @@ def create_rs_volume_df(stocks, current_date, end_dates, periods, index_returns,
     volume_dfs = []
     rs_volume_dfs = []
 
-    # Fetch data once per ticker
+    # Fetch data once per stock
     dfs = {}
     for stock in tqdm(stocks, desc="Fetching stock price data"):
         dfs[stock] = get_df(stock, current_date)
@@ -33,10 +33,10 @@ def create_rs_volume_df(stocks, current_date, end_dates, periods, index_returns,
         return_muls = {}
         volume_smas = {}
 
-        # Iterate over all tickers
-        for ticker in tqdm(stocks, desc=f"Processing data for {end_date}"):
+        # Iterate over all stocks
+        for stock in tqdm(stocks, desc=f"Processing data for {end_date}"):
             try:
-                df = dfs.get(ticker)
+                df = dfs.get(stock)
                 if df is None:
                     continue
                 
@@ -51,36 +51,36 @@ def create_rs_volume_df(stocks, current_date, end_dates, periods, index_returns,
 
                 # Calculate the stock return relative to the market
                 return_mul = stock_return / index_return
-                return_muls[ticker] = return_mul
+                return_muls[stock] = return_mul
                 if print_multiple:
-                    print(f"Ticker: {ticker} ; Return multiple against {index_shortName}: {round(return_mul, 2)}\n")
+                    print(f"Stock: {stock} ; Return multiple against {index_shortName}: {round(return_mul, 2)}\n")
                 
                 # Calculate the moving averages of volume
                 df["Volume SMA 5"] = SMA(df, 5, column="Volume")
                 df["Volume SMA 20"] = SMA(df, 20, column="Volume")
-                volume_smas[ticker] = {"Volume SMA 5": df["Volume SMA 5"].iloc[-1], "Volume SMA 20": df["Volume SMA 20"].iloc[-1]}
+                volume_smas[stock] = {"Volume SMA 5": df["Volume SMA 5"].iloc[-1], "Volume SMA 20": df["Volume SMA 20"].iloc[-1]}
 
             except Exception as e:
-                print(f"Error processing data for {ticker}: {e}\n")
+                print(f"Error processing data for {stock}: {e}\n")
                 continue
 
             # time.sleep(0.05)
             
-        # Create a dataframe to store the RS ratings of tickers
+        # Create a dataframe to store the RS ratings of stocks
         return_muls = dict(sorted(return_muls.items(), key=lambda x: x[1], reverse=True))
-        rs_df = pd.DataFrame(return_muls.items(), columns=["Ticker", "Value"])
+        rs_df = pd.DataFrame(return_muls.items(), columns=["Stock", "Value"])
         rs_df["RS"] = rs_df["Value"].rank(pct=True) * 100
-        rs_df = rs_df[["Ticker", "RS"]]
+        rs_df = rs_df[["Stock", "RS"]]
 
-        # Create a dataframe to store the volume ranks of tickers
+        # Create a dataframe to store the volume ranks of stocks
         volume_df = pd.DataFrame.from_dict(volume_smas, orient="index", columns=["Volume SMA 5", "Volume SMA 20"])
-        volume_df["Ticker"] = volume_df.index
+        volume_df["Stock"] = volume_df.index
         volume_df.reset_index(drop=True, inplace=True)
         volume_df["Volume SMA 5 Rank"] = volume_df["Volume SMA 5"].rank(ascending=False)
         volume_df["Volume SMA 20 Rank"] = volume_df["Volume SMA 20"].rank(ascending=False)
 
         # Merge the dataframes
-        rs_volume_df = pd.merge(rs_df, volume_df, on="Ticker")
+        rs_volume_df = pd.merge(rs_df, volume_df, on="Stock")
         rs_volume_df = rs_volume_df.sort_values(by="RS", ascending=False)
 
         # Check if there are pre-existing data
@@ -159,12 +159,12 @@ def longshortRS(stocks, index_df, index_name, index_dict, NASDAQ_all, current_da
             volume_df1 = volume_df1[(volume_df1["Volume SMA 5 Rank"] <= volume_filter) | (volume_df1["Volume SMA 20 Rank"] <= volume_filter)]
             volume_df2 = volume_df2[(volume_df2["Volume SMA 5 Rank"] <= volume_filter) | (volume_df2["Volume SMA 20 Rank"] <= volume_filter)]
 
-            # Filter rs_df1 and rs_df2 based on the tickers present in volume dataframes
-            rs_df1 = rs_df1[rs_df1["Ticker"].isin(set(volume_df1["Ticker"]))]
-            rs_df2 = rs_df2[rs_df2["Ticker"].isin(set(volume_df2["Ticker"]))]
+            # Filter rs_df1 and rs_df2 based on the stocks present in volume dataframes
+            rs_df1 = rs_df1[rs_df1["Stock"].isin(set(volume_df1["Stock"]))]
+            rs_df2 = rs_df2[rs_df2["Stock"].isin(set(volume_df2["Stock"]))]
 
         # Merge and clean data
-        merged_df = pd.merge(rs_df1, rs_df2, on="Ticker", suffixes=(" 1", " 2"))
+        merged_df = pd.merge(rs_df1, rs_df2, on="Stock", suffixes=(" 1", " 2"))
         merged_df = merged_df.rename(columns={"RS 1": "Long-term RS", "RS 2": "Short-term RS"}).dropna()
         merged_dfs.append(merged_df)
 

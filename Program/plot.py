@@ -383,7 +383,7 @@ def plot_FTD_DD(stock, df, show=252*2, save=False):
     plt.show()
 
 # Plot the market breadth indicators
-def plot_market_breadth(index_name, index_df, tickers, periods=[20, 50, 200], show=120, save=False):
+def plot_market_breadth(index_name, index_df, stocks, periods=[20, 50, 200], show=120, save=False):
     # Add technical indicators to the data
     add_indicator(index_df)
 
@@ -420,9 +420,9 @@ def plot_market_breadth(index_name, index_df, tickers, periods=[20, 50, 200], sh
     buffer = relativedelta(days=1)
     ax1.set_xlim(index_df.index[0] - buffer, index_df.index[-1] + buffer)
 
-    # Plot the % of tickers above the SMAs on the second subplot
+    # Plot the % of stocks above the SMAs on the second subplot
     for i in periods:
-        ax2.plot(index_df.index, index_df[f"Above SMA {str(i)}"] / len(tickers) * 100, label=f"% above SMA {str(i)}")
+        ax2.plot(index_df.index, index_df[f"Above SMA {str(i)}"] / len(stocks) * 100, label=f"% above SMA {str(i)}")
 
     # Set the y label of the second subplot
     ax2.set_ylabel(f"% above SMA")
@@ -779,8 +779,8 @@ def plot_longshortRS(merged_df, end_date1, end_date2, stock_star=None):
     plt.figure(figsize=(10, 6))
     plt.scatter(merged_df["Long-term RS"], merged_df["Short-term RS"], color="blue", marker="x")
 
-    # Highlight the specific ticker with a star
-    star = merged_df[merged_df["Ticker"] == stock_star]
+    # Highlight the specific stock with a star
+    star = merged_df[merged_df["Stock"] == stock_star]
     if not star.empty:
         plt.scatter(star["Long-term RS"], star["Short-term RS"], color="gold", edgecolor="black", marker="*", s=100, label=stock_star)
 

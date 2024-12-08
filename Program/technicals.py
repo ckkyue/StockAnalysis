@@ -9,7 +9,7 @@ from scipy.stats import linregress
 from tqdm import tqdm
 
 # Create dataframes to store RS ratings and volume ranks
-def create_rs_volume_df(tickers, current_date, end_dates, periods, index_returns, index_shortName, result_folder, infix, backtest, print_multiple=True):
+def create_rs_volume_df(stocks, current_date, end_dates, periods, index_returns, index_shortName, result_folder, infix, backtest, print_multiple=True):
     # Convert inputs to lists
     if not isinstance(end_dates, list):
         end_dates = [end_dates]
@@ -25,8 +25,8 @@ def create_rs_volume_df(tickers, current_date, end_dates, periods, index_returns
 
     # Fetch data once per ticker
     dfs = {}
-    for ticker in tqdm(tickers, desc="Fetching ticker data"):
-        dfs[ticker] = get_df(ticker, current_date)
+    for stock in tqdm(stocks, desc="Fetching stock price data"):
+        dfs[stock] = get_df(stock, current_date)
     
     # Iterate over all combinations of end dates, periods, and index return
     for end_date, period, index_return in zip(end_dates, periods, index_returns):
@@ -34,7 +34,7 @@ def create_rs_volume_df(tickers, current_date, end_dates, periods, index_returns
         volume_smas = {}
 
         # Iterate over all tickers
-        for ticker in tqdm(tickers, desc=f"Processing data for {end_date}"):
+        for ticker in tqdm(stocks, desc=f"Processing data for {end_date}"):
             try:
                 df = dfs.get(ticker)
                 if df is None:
@@ -553,7 +553,7 @@ def trend_AD(data, periods=[20, 50, 200], column="Close"):
     return data
 
 # Calculate the market breadth indicators
-def market_breadth(end_date, index_df, tickers, periods=[20, 50, 200]):
+def market_breadth(end_date, index_df, stocks, periods=[20, 50, 200]):
     # Initialize the Above SMA columns
     for i in periods:
         index_df[f"Above SMA {str(i)}"] = 0
@@ -562,21 +562,21 @@ def market_breadth(end_date, index_df, tickers, periods=[20, 50, 200]):
     index_df["A"] = 0
     index_df["D"] = 0
 
-    # Iterate over all tickers
-    for ticker in tqdm(tickers):
-        # Get the price data of the ticker
-        df = get_df(ticker, end_date)
+    # Iterate over all stocks
+    for stock in tqdm(stocks):
+        # Get the price data of the stock
+        df = get_df(stock, end_date)
 
         # Check if the data exist
         if df is not None:
             # Preprocess the data to get the market breadth and AD line
             df = trend_AD(df)
 
-            # Calculate the number of tickers above SMAs
+            # Calculate the number of stocks above SMAs
             for i in periods:
                 index_df.loc[:, f"Above SMA {str(i)}"] = index_df.loc[:, f"Above SMA {str(i)}"].add(df[f"Above SMA {str(i)}"], fill_value=0)
             
-            # Accumulate the advancing (A) and declining (D) values for all tickers
+            # Accumulate the advancing (A) and declining (D) values for all stocks
             index_df.loc[:, "A"] = index_df.loc[:, "A"].add(df["A"], fill_value=0)
             index_df.loc[:, "D"] = index_df.loc[:, "D"].add(df["D"], fill_value=0)
 

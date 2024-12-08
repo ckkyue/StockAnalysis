@@ -254,7 +254,7 @@ def process_stock(stock, index_name, end_date, current_date, stock_dfs, stock_in
                     # Get the next earning date
                     try:
                         earning_dates = get_earning_dates(stock, current_date)
-                        next_earning_date = str(earning_dates[earning_dates > end_date].min())
+                        next_earning_date = min([earning_date for earning_date in earning_dates if earning_date > end_date])
 
                     except Exception as e:
                         print(f"Error getting next earning date {stock}: {e}\n")
@@ -310,7 +310,7 @@ def process_stock(stock, index_name, end_date, current_date, stock_dfs, stock_in
                         })
 
                     return result
-                
+                    
     except Exception as e:
         print(f"Error for {stock}: {e}\n")
 

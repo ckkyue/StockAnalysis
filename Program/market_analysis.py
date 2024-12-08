@@ -187,7 +187,7 @@ def main():
     # Get the price data of the index
     index_df = get_df(index_name, current_date)
 
-    plot_all = True
+    plot_all = False
     if plot_all:
         # Iterate over all indices and sectors
         for ticker in index_names + sectors:
@@ -241,7 +241,7 @@ def main():
         for category, sectors_list in sector_classification.items():
             print(f"{category} sectors: {', '.join(sectors_list)}")
 
-    plot_all_jdk = True
+    plot_all_jdk = False
     if plot_all_jdk:
         # Iterate over all sectors
         for sector in sectors:
@@ -263,7 +263,7 @@ def main():
 
         retracement_excel(excel_filename, current_date)
 
-    screen_us = True
+    screen_us = False
     if screen_us:
         # Get the Excel filename
         excel_filename = get_excel_filename(current_date, "^GSPC", index_dict, period_hk, period_us, RS, NASDAQ_all, result_folder)

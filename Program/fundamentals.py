@@ -10,7 +10,6 @@ from pyfinviz.quote import Quote
 import re
 import requests
 import time
-from tqdm import tqdm
 import yfinance as yf
 
 # Scrape the url
@@ -167,7 +166,7 @@ def fundamentals_map(x):
         return "N/A"
     
 # Get the csv date
-def get_csv_date(current_date, smaller=True):
+def get_csv_date(current_date, before=True):
     # Format the current date
     current_date = dt.datetime.strptime(current_date, "%Y-%m-%d")
     
@@ -183,10 +182,12 @@ def get_csv_date(current_date, smaller=True):
         date = dt.datetime(current_date.year, month, 1)
         dates.append(date)
 
-    if smaller:
+    if before:
+        # Filter dates to include only those before or on the current date
         dates = [date for date in dates if date <= current_date]
         csv_date = max(dates) if dates else None
     else:
+        # Filter dates to include only those after the current date
         dates = [date for date in dates if date > current_date]
         csv_date = min(dates) if dates else None
 
@@ -297,26 +298,26 @@ def get_market_cap(stock, stock_info, end_date, current_date):
     try:
         # Get the earning dates
         earning_dates = get_earning_dates(stock, current_date)
-        earning_dates = earning_dates[earning_dates < current_date]
+        earning_dates = [earning_date for earning_date in earning_dates if earning_date < current_date]
 
     except Exception as e:
         print(f"Error getting earnings dates {stock}: {e}\n")
-        earning_dates = None
+        earning_dates = []
 
     # Get the most recent earning date
-    if earning_dates is not None:
-        recent_earning_date = earning_dates.max().strftime("%Y-%m-%d")
+    if earning_dates:
+        recent_earning_date = max(earning_dates)
     else:
         recent_earning_date = current_date
 
     # Read the fundamentals data from .csv file if end date is earlier than recent earning date
     if end_date < recent_earning_date:
-        if earning_dates is not None:
+        if earning_dates:
             # Get the earning dates
-            earning_dates = earning_dates[earning_dates < end_date]
+            earning_dates = [earning_date for earning_date in earning_dates if earning_date < end_date]
             
             # Get the most recent report date
-            recent_report_date = earning_dates.max().strftime("%Y-%m-%d")
+            recent_report_date = max(earning_dates)
 
         # Estimate the recent report date by shifting 3 months backwards from end date
         else:
@@ -362,27 +363,27 @@ def get_fundamentals(stock, end_date, current_date, columns=["EPS past 5Y", "EPS
     try:
         # Get the earning dates
         earning_dates = get_earning_dates(stock, current_date)
-        earning_dates = earning_dates[earning_dates < current_date]
+        earning_dates = [earning_date for earning_date in earning_dates if earning_date < current_date]
 
     except Exception as e:
         print(f"Error getting earnings dates {stock}: {e}\n")
-        earning_dates = None
+        earning_dates = []
 
     # Get the most recent earning date
-    if earning_dates is not None:
-        recent_earning_date = earning_dates.max().strftime("%Y-%m-%d")
+    if earning_dates:
+        recent_earning_date = max(earning_dates)
 
     else:
         recent_earning_date = current_date
     
     # Read the fundamentals data from .csv file if end date is earlier than recent earning date
     if end_date < recent_earning_date:
-        if earning_dates is not None:
+        if earning_dates:
             # Get the earning dates
-            earning_dates = earning_dates[earning_dates < end_date]
+            earning_dates = [earning_date for earning_date in earning_dates if earning_date < end_date]
             
             # Get the most recent report date
-            recent_report_date = earning_dates.max().strftime("%Y-%m-%d")
+            recent_report_date = max(earning_dates)
 
         # Estimate the recent report date by shifting 3 months backwards from end date
         else:
@@ -446,10 +447,11 @@ def get_lastQ_growths(stock, index_name, end_date, current_date):
     try:
         # Get the earning dates
         earning_dates = get_earning_dates(stock, current_date)
-        earning_dates = earning_dates[earning_dates < current_date]
+        earning_dates = [earning_date for earning_date in earning_dates if earning_date < current_date]
+
     except Exception as e:
         print(f"Error getting earnings dates {stock}: {e}\n")
-        earning_dates = None
+        earning_dates = []
 
     # Return "N/A" for HKEX stocks
     if index_name == "^HSI":
@@ -457,12 +459,12 @@ def get_lastQ_growths(stock, index_name, end_date, current_date):
     
     # Handle non-HKEX stocks
     else:
-        if earning_dates is not None:
+        if earning_dates:
             # Get the earning dates
-            earning_dates = earning_dates[earning_dates < end_date]
+            earning_dates = [earning_date for earning_date in earning_dates if earning_date < end_date]
             
             # Get the most recent report date
-            recent_report_date = earning_dates.max().strftime("%Y-%m-%d")
+            recent_report_date = max(earning_dates)
 
         # Estimate the recent report date by shifting 3 months backward from end date
         else:

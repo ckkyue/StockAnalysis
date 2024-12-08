@@ -60,13 +60,47 @@ def etl(response):
         for index, value in enumerate(text):
             df[value] = dicts[index].values()
         df.index = dicts[index].keys()
-
         return df
+    
     except Exception:
         return pd.DataFrame()
+    
+# Get the csv date
+def get_csv_date(current_date, before=True):
+    # Format the current date
+    current_date = dt.datetime.strptime(current_date, "%Y-%m-%d")
+    
+    # Months that are multiples of 3
+    months = [3, 6, 9, 12]
+    
+    # Create a list to store possible dates
+    dates = []
+    
+    # Iterate over all months
+    for month in months:
+        # Create an intermediate date for the 1st of the month
+        date = dt.datetime(current_date.year, month, 1)
+        dates.append(date)
+
+    if before:
+        # Filter dates to include only those before or on the current date
+        dates = [date for date in dates if date <= current_date]
+        csv_date = max(dates) if dates else None
+    else:
+        # Filter dates to include only those after the current date
+        dates = [date for date in dates if date > current_date]
+        csv_date = min(dates) if dates else None
+
+    if csv_date:
+        return csv_date.strftime("%Y-%m-%d")
+    else:
+        return None
 
 # Get the fundamentals of a stock and save the data to a .csv file
 def fundamentals_csv(stock, end_date):
+    # Get the csv date
+    csv_date = get_csv_date(end_date)
+
     # Define the folder path
     folder_path = "Fundamentals"
 
@@ -85,12 +119,12 @@ def fundamentals_csv(stock, end_date):
             if date < max_date:
                 os.remove(os.path.join(folder_path, f"{stock}_fundamentals_{date}.csv"))
         # Define the filename
-        if end_date >= max_date:
-            filename = os.path.join(folder_path, f"{stock}_fundamentals_{end_date}.csv")
+        if csv_date >= max_date:
+            filename = os.path.join(folder_path, f"{stock}_fundamentals_{csv_date}.csv")
         else:
             filename = os.path.join(folder_path, f"{stock}_fundamentals_{max_date}.csv")
     else:
-        filename = os.path.join(folder_path, f"{stock}_fundamentals_{end_date}.csv")
+        filename = os.path.join(folder_path, f"{stock}_fundamentals_{csv_date}.csv")
     
     # Save the data to a .csv file if the most updated data do not exist
     if not os.path.isfile(filename):
@@ -105,7 +139,6 @@ def fundamentals_csv(stock, end_date):
             except AttributeError:
                 base_url = None
                 print(f"AttributeError: response_revenue = {response_revenue}")
-
                 return None
 
             # Get the infix
@@ -150,54 +183,24 @@ def fundamentals_csv(stock, end_date):
         df = pd.read_csv(filename)
         df["Date"] = pd.to_datetime(df["Date"])
         df.set_index("Date", inplace=True)
-
         return df
-    
     else:
         print(f"File not found: {filename}.")
-        
         return None
 
 # Define the fundamentals map
 def fundamentals_map(x):
     try:
         return float(x.replace("%", ""))
+    
     except ValueError:
         return "N/A"
     
-# Get the csv date
-def get_csv_date(current_date, before=True):
-    # Format the current date
-    current_date = dt.datetime.strptime(current_date, "%Y-%m-%d")
-    
-    # Months that are multiples of 3
-    months = [3, 6, 9, 12]
-    
-    # Create a list to store possible dates
-    dates = []
-    
-    # Iterate over all months
-    for month in months:
-        # Create an intermediate date for the 1st of the month
-        date = dt.datetime(current_date.year, month, 1)
-        dates.append(date)
-
-    if before:
-        # Filter dates to include only those before or on the current date
-        dates = [date for date in dates if date <= current_date]
-        csv_date = max(dates) if dates else None
-    else:
-        # Filter dates to include only those after the current date
-        dates = [date for date in dates if date > current_date]
-        csv_date = min(dates) if dates else None
-
-    if csv_date:
-        return csv_date.strftime("%Y-%m-%d")
-    else:
-        return None
-    
 # Get the earning dates of a stock and save the data to a .csv file
 def earning_dates_csv(stock, end_date):
+    # Get the csv date
+    csv_date = get_csv_date(end_date)
+
     # Define the folder path
     folder_path = "Fundamentals"
 
@@ -216,12 +219,12 @@ def earning_dates_csv(stock, end_date):
             if date < max_date:
                 os.remove(os.path.join(folder_path, f"{stock}_earningdates_{date}.csv"))
         # Define the filename
-        if end_date >= max_date:
-            filename = os.path.join(folder_path, f"{stock}_earningdates_{end_date}.csv")
+        if csv_date >= max_date:
+            filename = os.path.join(folder_path, f"{stock}_earningdates_{csv_date}.csv")
         else:
             filename = os.path.join(folder_path, f"{stock}_earningdates_{max_date}.csv")
     else:
-        filename = os.path.join(folder_path, f"{stock}_earningdates_{end_date}.csv")
+        filename = os.path.join(folder_path, f"{stock}_earningdates_{csv_date}.csv")
 
     # Save the data to a .csv file if the most updated data do not exist
     if not os.path.isfile(filename):
@@ -257,12 +260,9 @@ def earning_dates_csv(stock, end_date):
     # Read the earning dates data of the stock if the file exists
     if os.path.isfile(filename):
         df = pd.read_csv(filename)
-
         return df
-    
     else:
         print(f"File not found: {filename}.")
-        
         return None
 
 # Get the earning dates of a stock
@@ -372,7 +372,6 @@ def get_fundamentals(stock, end_date, current_date, columns=["EPS past 5Y", "EPS
     # Get the most recent earning date
     if earning_dates:
         recent_earning_date = max(earning_dates)
-
     else:
         recent_earning_date = current_date
     

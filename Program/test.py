@@ -1,7 +1,4 @@
 # Imports
-import sys
-sys.path.append("Program")
-
 import datetime as dt
 from fundamentals import *
 from helper_functions import get_current_date, get_df, get_volume5m_data, generate_end_dates, merge_stocks, stock_market

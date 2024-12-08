@@ -73,52 +73,73 @@ def fundamentals_csv(stock, end_date):
 
     # Check if there are pre-existing data
     current_files = [file for file in os.listdir(folder_path) if file.startswith(f"{stock}_fundamentals_")]
-    for file in current_files:
-        date = file.split("_")[-1].replace(".csv", "")
-        if date >= end_date:
-            end_date = date
 
-    # Read the fundamentals data of the stock
-    filename = os.path.join(folder_path, f"{stock}_fundamentals_{end_date}.csv")
+    # Get the list of dates
+    dates = [file.split("_")[-1].replace(".csv", "") for file in current_files]
+
+    # Get the maximum date from the list of dates
+    max_date = max(dates) if dates else "N/A"
+
+    # Remove the old files for dates prior to the maximum date
+    if max_date != "N/A":
+        for date in dates:
+            if date < max_date:
+                os.remove(os.path.join(folder_path, f"{stock}_fundamentals_{date}.csv"))
+        # Define the filename
+        if end_date >= max_date:
+            filename = os.path.join(folder_path, f"{stock}_fundamentals_{end_date}.csv")
+        else:
+            filename = os.path.join(folder_path, f"{stock}_fundamentals_{max_date}.csv")
+    else:
+        filename = os.path.join(folder_path, f"{stock}_fundamentals_{end_date}.csv")
     
     # Save the data to a .csv file if the most updated data do not exist
     if not os.path.isfile(filename):
-        stock_upper = stock.upper()
-        url_revenue = f"https://www.macrotrends.net/stocks/charts/{stock_upper}/unknown/revenue"
-        response_revenue = scrape(url_revenue)
-
         try:
-            base_url = response_revenue.url
+            stock_upper = stock.upper()
+            url_revenue = f"https://www.macrotrends.net/stocks/charts/{stock_upper}/unknown/revenue"
+            response_revenue = scrape(url_revenue)
 
-        except AttributeError:
-            base_url = None
-            print(f"AttributeError: response_revenue = {response_revenue}")
+            try:
+                base_url = response_revenue.url
 
-            return None
+            except AttributeError:
+                base_url = None
+                print(f"AttributeError: response_revenue = {response_revenue}")
 
-        # Get the infix
-        infix = base_url.split("/")[-2]
+                return None
 
-        # Set the urls for scraping
-        url1 = f"https://www.macrotrends.net/stocks/charts/{stock_upper}/{infix}/income-statement?freq=Q"
-        url2 = f"https://www.macrotrends.net/stocks/charts/{stock_upper}/{infix}/financial-ratios?freq=Q"
+            # Get the infix
+            infix = base_url.split("/")[-2]
 
-        # Scrape the urls and create dataframes
-        response1 = scrape(url1)
-        df1 = etl(response1)
-        response2 = scrape(url2)
-        df2 = etl(response2)
+            # Set the urls for scraping
+            url1 = f"https://www.macrotrends.net/stocks/charts/{stock_upper}/{infix}/income-statement?freq=Q"
+            url2 = f"https://www.macrotrends.net/stocks/charts/{stock_upper}/{infix}/financial-ratios?freq=Q"
 
-        # Check if df1 or df2 is empty
-        if df1.empty or df2.empty:
-            print(f"Empty dataframe for {stock}.")
+            # Scrape the urls and create dataframes
+            response1 = scrape(url1)
+            df1 = etl(response1)
+            response2 = scrape(url2)
+            df2 = etl(response2)
 
-            return None
+            # Check if df1 or df2 is empty
+            if df1.empty or df2.empty:
+                print(f"Empty dataframe for {stock}.")
 
-        df = pd.concat([df1, df2], axis=1) # Concatenate based on index
-        df.index.name = "Date"
-        df.to_csv(filename)
-        print(f"Fundamentals data download completed for {stock}.")
+                return None
+
+            df = pd.concat([df1, df2], axis=1) # Concatenate based on index
+            df.index.name = "Date"
+            df.to_csv(filename)
+            print(f"Fundamentals data download completed for {stock}.")
+            
+            if max_date != "N/A":
+                os.remove(os.path.join(folder_path, f"{stock}_fundamentals_{max_date}.csv"))
+        
+        except Exception as e:
+            print(f"Error for {stock}: {e}")
+            print(f"Retrieve existing data at {max_date}.")
+            filename = os.path.join(folder_path, f"{stock}_fundamentals_{max_date}.csv")
     else:
         print(f"Fundamentals data download completed for {stock} before.")
 
@@ -167,7 +188,7 @@ def get_market_cap(ticker, stock_info, end_date, current_date):
             recent_report_date = (dt.datetime.strptime(end_date, "%Y-%m-%d") - relativedelta(months=3)).strftime("%Y-%m-%d")
 
         # Define the csv date
-        csv_date = "2024-07-01"
+        csv_date = "2024-12-01"
 
         # Read the fundamentals data from .csv file
         df = fundamentals_csv(ticker, csv_date)
@@ -233,7 +254,7 @@ def get_fundamentals(ticker, end_date, current_date, columns=["EPS past 5Y", "EP
             recent_report_date = (dt.datetime.strptime(end_date, "%Y-%m-%d") - relativedelta(months=3)).strftime("%Y-%m-%d")
 
         # Define the csv date
-        csv_date = "2024-07-01"
+        csv_date = "2024-12-01"
 
         # Read the fundamentals data from .csv file
         df = fundamentals_csv(ticker, csv_date)
@@ -313,7 +334,7 @@ def get_lastQ_growths(ticker, index_name, end_date, current_date):
             recent_report_date = (dt.datetime.strptime(end_date, "%Y-%m-%d") - relativedelta(months=3)).strftime("%Y-%m-%d")
 
         # Define the csv date
-        csv_date = "2024-07-01"
+        csv_date = "2024-12-01"
 
         # Modify the csv date
         if recent_report_date > csv_date:

@@ -1,7 +1,7 @@
 # Imports
 import datetime as dt
 from dateutil.relativedelta import relativedelta
-from helper_functions import get_df, get_earning_dates
+from helper_functions import get_df
 import json
 import numpy as np
 import os
@@ -126,29 +126,38 @@ def fundamentals_csv(stock, end_date):
             if df1.empty or df2.empty:
                 print(f"Empty dataframe for {stock}.")
 
-                return None
-
-            df = pd.concat([df1, df2], axis=1) # Concatenate based on index
-            df.index.name = "Date"
-            df.to_csv(filename)
-            print(f"Fundamentals data download completed for {stock}.")
+                # Retrieve existing data
+                if max_date != "N/A":
+                    print(f"Try to retrieve existing data at {max_date}.")
+                    filename = os.path.join(folder_path, f"{stock}_fundamentals_{max_date}.csv")
             
-            if max_date != "N/A":
-                os.remove(os.path.join(folder_path, f"{stock}_fundamentals_{max_date}.csv"))
+            else:
+                df = pd.concat([df1, df2], axis=1) # Concatenate based on index
+                df.index.name = "Date"
+                df.to_csv(filename)
+                print(f"Fundamentals data download completed for {stock}.")
+            
+                if max_date != "N/A":
+                    os.remove(os.path.join(folder_path, f"{stock}_fundamentals_{max_date}.csv"))
         
         except Exception as e:
             print(f"Error for {stock}: {e}")
-            print(f"Retrieve existing data at {max_date}.")
-            filename = os.path.join(folder_path, f"{stock}_fundamentals_{max_date}.csv")
+
     else:
         print(f"Fundamentals data download completed for {stock} before.")
 
-    # Read the fundamentals data of the stock
-    df = pd.read_csv(filename)
-    df["Date"] = pd.to_datetime(df["Date"])
-    df.set_index("Date", inplace=True)
+    # Read the fundamentals data of the stock if the file exists
+    if os.path.isfile(filename):
+        df = pd.read_csv(filename)
+        df["Date"] = pd.to_datetime(df["Date"])
+        df.set_index("Date", inplace=True)
 
-    return df
+        return df
+    
+    else:
+        print(f"File not found: {filename}.")
+        
+        return None
 
 # Define the fundamentals map
 def fundamentals_map(x):
@@ -156,16 +165,142 @@ def fundamentals_map(x):
         return float(x.replace("%", ""))
     except ValueError:
         return "N/A"
+    
+# Get the csv date
+def get_csv_date(current_date, smaller=True):
+    # Format the current date
+    current_date = dt.datetime.strptime(current_date, "%Y-%m-%d")
+    
+    # Months that are multiples of 3
+    months = [3, 6, 9, 12]
+    
+    # Create a list to store possible dates
+    dates = []
+    
+    # Iterate over all months
+    for month in months:
+        # Create an intermediate date for the 1st of the month
+        date = dt.datetime(current_date.year, month, 1)
+        dates.append(date)
 
-# Get the market cap of a ticker
-def get_market_cap(ticker, stock_info, end_date, current_date):
+    if smaller:
+        dates = [date for date in dates if date <= current_date]
+        csv_date = max(dates) if dates else None
+    else:
+        dates = [date for date in dates if date > current_date]
+        csv_date = min(dates) if dates else None
+
+    if csv_date:
+        return csv_date.strftime("%Y-%m-%d")
+    else:
+        return None
+    
+# Get the earning dates of a stock and save the data to a .csv file
+def earning_dates_csv(stock, end_date):
+    # Define the folder path
+    folder_path = "Fundamentals"
+
+    # Check if there are pre-existing data
+    current_files = [file for file in os.listdir(folder_path) if file.startswith(f"{stock}_earningdates_")]
+
+    # Get the list of dates
+    dates = [file.split("_")[-1].replace(".csv", "") for file in current_files]
+
+    # Get the maximum date from the list of dates
+    max_date = max(dates) if dates else "N/A"
+
+    # Remove the old files for dates prior to the maximum date
+    if max_date != "N/A":
+        for date in dates:
+            if date < max_date:
+                os.remove(os.path.join(folder_path, f"{stock}_earningdates_{date}.csv"))
+        # Define the filename
+        if end_date >= max_date:
+            filename = os.path.join(folder_path, f"{stock}_earningdates_{end_date}.csv")
+        else:
+            filename = os.path.join(folder_path, f"{stock}_earningdates_{max_date}.csv")
+    else:
+        filename = os.path.join(folder_path, f"{stock}_earningdates_{end_date}.csv")
+
+    # Save the data to a .csv file if the most updated data do not exist
+    if not os.path.isfile(filename):
+        try:
+            # Set the url for scraping
+            url = f"https://www.alphaquery.com/stock/{stock}/earnings-history"
+
+            # Create dataframe
+            df = pd.read_html(url)[0]
+
+            # Check if df is empty
+            if df.empty:
+                print(f"Empty dataframe for {stock}.")
+
+                # Retrieve existing data
+                if max_date != "N/A":
+                    print(f"Try to retrieve existing data at {max_date}.")
+                    filename = os.path.join(folder_path, f"{stock}_earningdates_{max_date}.csv")
+
+            else:
+                df.to_csv(filename)
+                print(f"Earning dates data download completed for {stock}.")
+
+                if max_date != "N/A":
+                    os.remove(os.path.join(folder_path, f"{stock}_earningdates_{max_date}.csv"))
+
+        except Exception as e:
+            print(f"Error for {stock}: {e}.")
+
+    else:
+        print(f"Earning dates data download completed for {stock} before.")
+
+    # Read the earning dates data of the stock if the file exists
+    if os.path.isfile(filename):
+        df = pd.read_csv(filename)
+
+        return df
+    
+    else:
+        print(f"File not found: {filename}.")
+        
+        return None
+
+# Get the earning dates of a stock
+def get_earning_dates(stock, current_date):
+    # Get the csv date
+    csv_date = get_csv_date(current_date)
+
+    # Get the dataframe
+    df = earning_dates_csv(stock, csv_date)
+
+    # Get the list of announcement dates and reverse the order
+    earning_dates = df["Announcement Date"].tolist()[::-1]
+
+    try:
+        # Get the future earning dates
+        calendar = yf.Ticker(stock).calendar
+
+        # Check if "Earnings Date" is available in the calendar data
+        if "Earnings Date" in calendar:
+            future_earning_dates = [date.strftime("%Y-%m-%d") for date in calendar["Earnings Date"]]
+            # Append future earning dates
+            earning_dates.extend(future_earning_dates)
+        else:
+            print("Next earnings date not available in the calendar data.")
+
+    except Exception as e:
+        print(f"Error for {stock}: {e}.")
+
+    return earning_dates
+
+# Get the market cap of a stock
+def get_market_cap(stock, stock_info, end_date, current_date):
     try:
         # Get the earning dates
-        earning_dates = get_earning_dates(ticker)
+        earning_dates = get_earning_dates(stock, current_date)
         earning_dates = earning_dates[earning_dates < current_date]
 
     except Exception as e:
-        print(f"Error getting earnings dates {ticker}: {e}\n")
+        print(f"Error getting earnings dates {stock}: {e}\n")
         earning_dates = None
 
     # Get the most recent earning date
@@ -187,11 +322,11 @@ def get_market_cap(ticker, stock_info, end_date, current_date):
         else:
             recent_report_date = (dt.datetime.strptime(end_date, "%Y-%m-%d") - relativedelta(months=3)).strftime("%Y-%m-%d")
 
-        # Define the csv date
-        csv_date = "2024-12-01"
+        # Get the csv date
+        csv_date = get_csv_date(current_date)
 
         # Read the fundamentals data from .csv file
-        df = fundamentals_csv(ticker, csv_date)
+        df = fundamentals_csv(stock, csv_date)
 
         # Check if the dataframe is None
         if df is not None:
@@ -205,7 +340,7 @@ def get_market_cap(ticker, stock_info, end_date, current_date):
             shares = df.loc[closest_date, "shares-outstanding"] * 1e6
 
             # Get the price data of the stock
-            df = get_df(ticker, end_date)
+            df = get_df(stock, end_date)
 
             # Get the latest closing price
             closest_close = df.loc[df.index[df.index <= closest_date].max(), "Close"]
@@ -222,15 +357,15 @@ def get_market_cap(ticker, stock_info, end_date, current_date):
 
     return market_cap
 
-# Get the fundamentals data of a ticker
-def get_fundamentals(ticker, end_date, current_date, columns=["EPS past 5Y", "EPS this Y", "EPS Q/Q", "ROE"]):
+# Get the fundamentals data of a stock
+def get_fundamentals(stock, end_date, current_date, columns=["EPS past 5Y", "EPS this Y", "EPS Q/Q", "ROE"]):
     try:
         # Get the earning dates
-        earning_dates = get_earning_dates(ticker)
+        earning_dates = get_earning_dates(stock, current_date)
         earning_dates = earning_dates[earning_dates < current_date]
 
     except Exception as e:
-        print(f"Error getting earnings dates {ticker}: {e}\n")
+        print(f"Error getting earnings dates {stock}: {e}\n")
         earning_dates = None
 
     # Get the most recent earning date
@@ -253,11 +388,11 @@ def get_fundamentals(ticker, end_date, current_date, columns=["EPS past 5Y", "EP
         else:
             recent_report_date = (dt.datetime.strptime(end_date, "%Y-%m-%d") - relativedelta(months=3)).strftime("%Y-%m-%d")
 
-        # Define the csv date
-        csv_date = "2024-12-01"
+        # Get the csv date
+        csv_date = get_csv_date(current_date)
 
         # Read the fundamentals data from .csv file
-        df = fundamentals_csv(ticker, csv_date)
+        df = fundamentals_csv(stock, csv_date)
 
         # Check if the dataframe is None
         if df is not None:
@@ -299,21 +434,21 @@ def get_fundamentals(ticker, end_date, current_date, columns=["EPS past 5Y", "EP
 
     # Scrape the fundamentals data from Finviz if end date is later than recent earning date
     else:
-        quote = Quote(ticker=ticker)
+        quote = Quote(ticker=stock)
         fundamental_df = quote.fundamental_df.loc[:, columns].map(fundamentals_map)
         data = fundamental_df.values[0]
         EPS_past5Y_growth, EPS_thisY_growth, EPS_QoQ_growth, ROE = *data,
     
     return EPS_past5Y_growth, EPS_thisY_growth, EPS_QoQ_growth, ROE
 
-# Get the quarterly growths of a ticker
-def get_lastQ_growths(ticker, index_name, end_date, current_date):
+# Get the quarterly growths of a stock
+def get_lastQ_growths(stock, index_name, end_date, current_date):
     try:
         # Get the earning dates
-        earning_dates = get_earning_dates(ticker)
+        earning_dates = get_earning_dates(stock, current_date)
         earning_dates = earning_dates[earning_dates < current_date]
     except Exception as e:
-        print(f"Error getting earnings dates {ticker}: {e}\n")
+        print(f"Error getting earnings dates {stock}: {e}\n")
         earning_dates = None
 
     # Return "N/A" for HKEX stocks
@@ -333,15 +468,15 @@ def get_lastQ_growths(ticker, index_name, end_date, current_date):
         else:
             recent_report_date = (dt.datetime.strptime(end_date, "%Y-%m-%d") - relativedelta(months=3)).strftime("%Y-%m-%d")
 
-        # Define the csv date
-        csv_date = "2024-12-01"
+        # Get the csv date
+        csv_date = get_csv_date(current_date)
 
         # Modify the csv date
         if recent_report_date > csv_date:
             csv_date = recent_report_date
         
          # Read the fundamentals data from .csv file       
-        df = fundamentals_csv(ticker, csv_date)
+        df = fundamentals_csv(stock, csv_date)
 
         # Check if the dataframe is None
         if df is not None:

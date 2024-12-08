@@ -3,7 +3,7 @@ import ast
 import concurrent.futures
 import datetime as dt
 from fundamentals import *
-from helper_functions import get_current_date, generate_end_dates, get_currency, get_df, get_earning_dates, get_excel_filename, get_infix, get_rs_volume, get_stock_info, slope_reg, stock_market
+from helper_functions import get_current_date, generate_end_dates, get_currency, get_df, get_excel_filename, get_infix, get_rs_volume, get_stock_info, slope_reg, stock_market
 import numpy as np
 import pandas as pd
 from pandas import ExcelWriter as EW
@@ -150,14 +150,14 @@ def check_conds_fund(Y_growth, Q_growth, ROE):
     return conds_fund, cond_f2, cond_f3, cond_f4
 
 # Check the Minervini conditions for the top performing stocks
-def process_stock(stock, index_name, end_date, current_date, stock_data, stock_info_data, rs_volume_df, backtest=False):
+def process_stock(stock, index_name, end_date, current_date, stock_dfs, stock_infos, rs_volume_df, backtest=False):
     # Get the currency
     currency = get_currency(index_name)
 
     try:
         # Get the data and information of the stock
-        df = stock_data[stock]
-        stock_info = stock_info_data[stock]
+        df = stock_dfs[stock]
+        stock_info = stock_infos[stock]
 
         # Preprocess stock data
         # Filter the data
@@ -253,7 +253,7 @@ def process_stock(stock, index_name, end_date, current_date, stock_data, stock_i
 
                     # Get the next earning date
                     try:
-                        earning_dates = get_earning_dates(stock)
+                        earning_dates = get_earning_dates(stock, current_date)
                         next_earning_date = str(earning_dates[earning_dates > end_date].min())
 
                     except Exception as e:
@@ -415,11 +415,11 @@ def select_stocks(end_dates, current_date, index_name, index_dict,
 
         # Fetch the stock data in parallel
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            stock_data = {stock: data for stock, data in tqdm(zip(stocks, executor.map(lambda stock: get_df(stock, end_date), stocks)), desc="Fetching stock price")}
-        stock_info_data = {stock: get_stock_info(stock) for stock in tqdm(stocks, desc="Fetching stock info")}
+            stock_dfs = {stock: data for stock, data in tqdm(zip(stocks, executor.map(lambda stock: get_df(stock, end_date), stocks)), desc="Fetching stock price data")}
+        stock_infos = {stock: get_stock_info(stock) for stock in tqdm(stocks, desc="Fetching stock info")}
 
         # Process each stock and create an export list
-        export_data = [process_stock(stock, index_name, end_date, current_date, stock_data, stock_info_data, rs_volume_df, backtest=backtest) for stock in tqdm(stocks)]
+        export_data = [process_stock(stock, index_name, end_date, current_date, stock_dfs, stock_infos, rs_volume_df, backtest=backtest) for stock in tqdm(stocks)]
         export_data = [row for row in export_data if row is not None]
         df = pd.DataFrame(export_data)
         df = EM_rating(index_name, df, factors)

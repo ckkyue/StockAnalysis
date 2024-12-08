@@ -385,8 +385,8 @@ def select_stocks(end_dates, current_date, index_name, index_dict,
 
     # Iterate over all end dates
     for end_date in tqdm(end_dates):
-        # Get the tickers of the stock market
-        tickers = stock_market(end_date, current_date, index_name, HKEX_all, NASDAQ_all)
+        # Get the stocks of the stock market
+        stocks = stock_market(end_date, current_date, index_name, HKEX_all, NASDAQ_all)
         
         # Get the price data of the index
         index_df = get_df(index_name, current_date)
@@ -403,15 +403,15 @@ def select_stocks(end_dates, current_date, index_name, index_dict,
         print(f"Return for {index_shortName} between {index_df.index[-period].strftime('%Y-%m-%d')} and {end_date}: {index_return:.2f}")
 
         # Find the return multiples and volumes
-        rs_df, volume_df, rs_volume_df = create_rs_volume_df(tickers, current_date, end_date, period, index_return, index_shortName, result_folder, infix, backtest)
+        rs_df, volume_df, rs_volume_df = create_rs_volume_df(stocks, current_date, end_date, period, index_return, index_shortName, result_folder, infix, backtest)
         
         # Filter the stocks
         if index_name == "^HSI":
             volume_df = volume_df[(volume_df["Volume SMA 5 Rank"] <= 200) | (volume_df["Volume SMA 20 Rank"] <= 200)]
-            stocks = volume_df["Ticker"]
+            stocks = volume_df["Stock"]
         else:
             rs_df = rs_df[rs_df["RS"] >= RS]
-            stocks = rs_df["Ticker"]
+            stocks = rs_df["Stock"]
 
         # Fetch the stock data in parallel
         with concurrent.futures.ThreadPoolExecutor() as executor:

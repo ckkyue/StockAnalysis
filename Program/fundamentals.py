@@ -73,14 +73,8 @@ def get_csv_date(current_date, before=True):
     # Months that are multiples of 3
     months = [3, 6, 9, 12]
     
-    # Create a list to store possible dates
-    dates = []
-    
-    # Iterate over all months
-    for month in months:
-        # Create an intermediate date for the 1st of the month
-        date = dt.datetime(current_date.year, month, 1)
-        dates.append(date)
+    # Create a list of dates for the 1st of the month, including last December
+    dates = [dt.datetime(current_date.year, month, 1) for month in months] + [dt.datetime(current_date.year - 1, 12, 1)]
 
     if before:
         # Filter dates to include only those before or on the current date
@@ -119,7 +113,7 @@ def fundamentals_csv(stock, end_date):
             if date < max_date:
                 os.remove(os.path.join(folder_path, f"{stock}_fundamentals_{date}.csv"))
         # Define the filename
-        if csv_date >= max_date:
+        if csv_date > max_date:
             filename = os.path.join(folder_path, f"{stock}_fundamentals_{csv_date}.csv")
         else:
             filename = os.path.join(folder_path, f"{stock}_fundamentals_{max_date}.csv")
@@ -219,7 +213,7 @@ def earning_dates_csv(stock, end_date):
             if date < max_date:
                 os.remove(os.path.join(folder_path, f"{stock}_earningdates_{date}.csv"))
         # Define the filename
-        if csv_date >= max_date:
+        if csv_date > max_date:
             filename = os.path.join(folder_path, f"{stock}_earningdates_{csv_date}.csv")
         else:
             filename = os.path.join(folder_path, f"{stock}_earningdates_{max_date}.csv")
